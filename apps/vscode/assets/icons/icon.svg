@@ -1,19 +1,6 @@
-﻿<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="128" height="128" rx="28" fill="#0F172A"/>
-  <rect x="4" y="4" width="120" height="120" rx="24" stroke="url(#border_grad)" stroke-width="2" stroke-opacity="0.6"/>
-  <path d="M42 82L64 36L86 82" stroke="url(#accent_grad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M51 68H77" stroke="url(#accent_grad)" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="64" cy="28" r="4" fill="#A5B4FC"/>
-  <defs>
-    <linearGradient id="border_grad" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#818CF8"/>
-      <stop offset="0.5" stop-color="#6366F1" stop-opacity="0.3"/>
-      <stop offset="1" stop-color="#C084FC"/>
-    </linearGradient>
-    <linearGradient id="accent_grad" x1="42" y1="36" x2="86" y2="82" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#A5B4FC"/>
-      <stop offset="0.5" stop-color="#818CF8"/>
-      <stop offset="1" stop-color="#C084FC"/>
-    </linearGradient>
-  </defs>
+﻿<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M6.5 8.5L3 12L6.5 15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17.5 8.5L21 12L17.5 15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9.5 16.5L12 7.5L14.5 16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10.2 13.8H13.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
 </svg>
