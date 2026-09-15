@@ -1,0 +1,38 @@
+﻿{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./apps/vscode/src/*"],
+      "@api/*": ["./apps/vscode/src/core/api/*"],
+      "@core/*": ["./apps/vscode/src/core/*"],
+      "@generated/*": ["./apps/vscode/src/generated/*"],
+      "@hosts/*": ["./apps/vscode/src/hosts/*"],
+      "@integrations/*": ["./apps/vscode/src/integrations/*"],
+      "@packages/*": ["./apps/vscode/src/packages/*"],
+      "@services/*": ["./apps/vscode/src/services/*"],
+      "@shared/*": ["./apps/vscode/src/shared/*"],
+      "@utils/*": ["./apps/vscode/src/utils/*"],
+      "@cline/shared": ["./sdk/packages/shared/src/index.ts"],
+      "@cline/shared/*": ["./sdk/packages/shared/src/*"],
+      "@cline/core": ["./sdk/packages/core/src/index.ts"],
+      "@cline/core/*": ["./sdk/packages/core/src/*"],
+      "@cline/llms": ["./sdk/packages/llms/src/index.ts"],
+      "@cline/agents": ["./sdk/packages/agents/src/index.ts"],
+      "@cline/ui": ["./sdk/packages/ui/src/index.ts"]
+    }
+  },
+  "include": [
+    "apps/vscode/src/**/*",
+    "sdk/packages/*/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ]
+}
