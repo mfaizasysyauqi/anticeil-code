@@ -1,5 +1,5 @@
 ﻿import { EmptyRequest } from "@shared/proto/cline/common"
-import anticeilLogo from "@/assets/anticeil-logo.png"
+import { ANTICEIL_LOGO_DATA_URI } from "@/assets/anticeilLogoDataUri"
 import { UiServiceClient } from "@/services/grpc-client"
 
 interface HomeHeaderProps {
@@ -21,7 +21,7 @@ const HomeHeader = ({ shouldShowQuickWins = false }: HomeHeaderProps) => {
 		<div className="flex flex-col items-center mb-5">
 			<div className="my-7 flex items-center justify-center">
 				<img
-					src={anticeilLogo}
+					src={ANTICEIL_LOGO_DATA_URI}
 					alt="Anticeil Code"
 					className="size-20 object-contain drop-shadow-[0_8px_20px_rgba(99,102,241,0.25)]"
 				/>
