@@ -1,5 +1,7 @@
-﻿<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3.5L5.8 19.5H8.6L10.2 15.2H13.8L15.4 19.5H18.2L12 3.5ZM12 8.2L13.1 13H10.9L12 8.2Z" fill="currentColor"/>
-  <path d="M4.5 8L1.5 12L4.5 16H2.5L0 12L2.5 8H4.5Z" fill="currentColor"/>
-  <path d="M19.5 8L22.5 12L19.5 16H21.5L24 12L21.5 8H19.5Z" fill="currentColor"/>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10.5" y="1" width="3" height="22" rx="0.5" fill="currentColor"/>
+  <line x1="12" y1="3" x2="2" y2="12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="12" y1="3" x2="1" y2="16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="12" y1="3" x2="22" y2="12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="12" y1="3" x2="23" y2="16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
 </svg>
