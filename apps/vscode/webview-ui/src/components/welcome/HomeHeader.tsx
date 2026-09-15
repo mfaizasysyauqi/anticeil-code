@@ -1,7 +1,5 @@
-import { EmptyRequest } from "@shared/proto/cline/common"
-import ClineLogoSanta from "@/assets/ClineLogoSanta"
-import ClineLogoVariable from "@/assets/ClineLogoVariable"
-import { useExtensionState } from "@/context/ExtensionStateContext"
+﻿import { EmptyRequest } from "@shared/proto/cline/common"
+import anticeilLogo from "@/assets/anticeil-logo.png"
 import { UiServiceClient } from "@/services/grpc-client"
 
 interface HomeHeaderProps {
@@ -9,8 +7,6 @@ interface HomeHeaderProps {
 }
 
 const HomeHeader = ({ shouldShowQuickWins = false }: HomeHeaderProps) => {
-	const { environment } = useExtensionState()
-
 	const handleTakeATour = async () => {
 		try {
 			await UiServiceClient.openWalkthrough(EmptyRequest.create())
@@ -19,14 +15,16 @@ const HomeHeader = ({ shouldShowQuickWins = false }: HomeHeaderProps) => {
 		}
 	}
 
-	const isDecember = new Date().getMonth() === 11 // 11 = December (0-indexed)
-	const LogoComponent = isDecember ? ClineLogoSanta : ClineLogoVariable
 	const headingText = "What can I do for you?"
 
 	return (
 		<div className="flex flex-col items-center mb-5">
-			<div className="my-7">
-				<LogoComponent className="size-20" environment={environment} />
+			<div className="my-7 flex items-center justify-center">
+				<img
+					src={anticeilLogo}
+					alt="Anticeil Code"
+					className="size-20 object-contain drop-shadow-[0_8px_20px_rgba(99,102,241,0.25)]"
+				/>
 			</div>
 			<div className="text-center flex items-center justify-center px-4">
 				<h1 className="m-0 font-bold">{headingText}</h1>
