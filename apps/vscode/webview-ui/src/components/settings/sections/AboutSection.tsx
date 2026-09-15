@@ -19,7 +19,7 @@ const AboutSection = ({ version, extensionVariant, renderSectionHeader }: AboutS
 			<Section>
 				<div className="flex px-4 flex-col gap-2">
 					<h2 className="text-lg font-semibold">
-						Cline v{version}
+						Anticeil Code v{version}
 						{extensionVariant && (
 							<span className="ml-2 text-sm font-normal text-description">
 								({VARIANT_LABELS[extensionVariant]})
@@ -27,7 +27,7 @@ const AboutSection = ({ version, extensionVariant, renderSectionHeader }: AboutS
 						)}
 					</h2>
 					<p>
-						An AI assistant that can use your CLI and Editor. Cline can handle complex software development tasks
+						An AI coding partner for autonomous development. Anticeil Code can handle complex software development tasks
 						step-by-step with tools that let him create & edit files, explore large projects, use the browser, and
 						execute terminal commands (after you grant permission).
 					</p>
@@ -43,9 +43,9 @@ const AboutSection = ({ version, extensionVariant, renderSectionHeader }: AboutS
 
 					<h3 className="text-md font-semibold">Development</h3>
 					<p>
-						<VSCodeLink href="https://github.com/cline/cline">GitHub</VSCodeLink>
+						<VSCodeLink href="https://github.com/mfaizasysyauqi/anticeil-code">GitHub</VSCodeLink>
 						{" • "}
-						<VSCodeLink href="https://github.com/cline/cline/issues"> Issues</VSCodeLink>
+						<VSCodeLink href="https://github.com/mfaizasysyauqi/anticeil-code/issues"> Issues</VSCodeLink>
 						{" • "}
 						<VSCodeLink href="https://github.com/cline/cline/discussions/categories/feature-requests?discussions_q=is%3Aopen+category%3A%22Feature+Requests%22+sort%3Atop">
 							{" "}
