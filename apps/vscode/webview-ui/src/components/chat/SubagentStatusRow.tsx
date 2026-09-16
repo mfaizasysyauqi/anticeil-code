@@ -6,7 +6,6 @@ import {
 	SubagentStatusItem,
 } from "@shared/ExtensionMessage"
 import {
-	BotIcon,
 	CheckIcon,
 	ChevronDownIcon,
 	ChevronRightIcon,
@@ -16,6 +15,7 @@ import {
 	NetworkIcon,
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { cn } from "@/lib/utils"
 import MarkdownBlock from "../common/MarkdownBlock"
 
 interface SubagentStatusRowProps {
@@ -38,18 +38,54 @@ interface SubagentPromptTextProps {
 	onShowMore: () => void
 }
 
-const statusIcon = (status: DisplayStatus) => {
+const getDotStyle = (status: DisplayStatus) => {
 	switch (status) {
 		case "running":
-			return <LoaderCircleIcon className="size-2 animate-spin text-link shrink-0 mt-[1px]" />
+			return {
+				backgroundColor: "rgba(0, 127, 212, 0.15)",
+				border: "1.5px solid var(--vscode-focusBorder, #007fd4)",
+				color: "var(--vscode-focusBorder, #007fd4)",
+				boxShadow: "0 0 6px rgba(0, 127, 212, 0.35)",
+			}
 		case "completed":
-			return <CheckIcon className="size-2 text-success shrink-0 mt-[1px]" />
+			return {
+				backgroundColor: "rgba(115, 201, 145, 0.15)",
+				border: "1.5px solid var(--vscode-testing-iconPassed, #73c991)",
+				color: "var(--vscode-testing-iconPassed, #73c991)",
+			}
 		case "failed":
-			return <CircleXIcon className="size-2 text-error shrink-0 mt-[1px]" />
+			return {
+				backgroundColor: "rgba(241, 76, 76, 0.15)",
+				border: "1.5px solid var(--vscode-errorForeground, #f14c4c)",
+				color: "var(--vscode-errorForeground, #f14c4c)",
+			}
 		case "cancelled":
-			return <CircleSlashIcon className="size-2 text-foreground shrink-0 mt-[1px]" />
+			return {
+				backgroundColor: "rgba(150, 150, 150, 0.12)",
+				border: "1.5px solid var(--vscode-descriptionForeground, #888)",
+				color: "var(--vscode-descriptionForeground, #888)",
+			}
+		default: // pending
+			return {
+				backgroundColor: "rgba(150, 150, 150, 0.08)",
+				border: "1.5px solid var(--vscode-editorGroup-border, rgba(255, 255, 255, 0.16))",
+				color: "var(--vscode-descriptionForeground, #888)",
+			}
+	}
+}
+
+const renderDotIcon = (status: DisplayStatus) => {
+	switch (status) {
+		case "running":
+			return <LoaderCircleIcon className="w-2.5 h-2.5 animate-spin" />
+		case "completed":
+			return <CheckIcon className="w-2.5 h-2.5 stroke-[2.5]" />
+		case "failed":
+			return <CircleXIcon className="w-2.5 h-2.5 stroke-[2]" />
+		case "cancelled":
+			return <CircleSlashIcon className="w-2.5 h-2.5 stroke-[2]" />
 		default:
-			return <BotIcon className="size-2 text-foreground/70 shrink-0 mt-[1px]" />
+			return <div className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
 	}
 }
 
@@ -154,7 +190,7 @@ function SubagentPromptText({ prompt, isExpanded, onShowMore }: SubagentPromptTe
 	return (
 		<div className="relative">
 			<div
-				className={`text-xs font-medium text-foreground whitespace-pre-wrap break-words ${!isExpanded ? "overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]" : ""}`}
+				className={`text-xs font-medium text-foreground whitespace-pre-wrap break-words leading-relaxed ${!isExpanded ? "overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]" : ""}`}
 				ref={promptRef}>
 				"{prompt}"
 			</div>
@@ -197,14 +233,16 @@ export default function SubagentStatusRow({ message, isLast, lastModifiedMessage
 			resumedBeforeNextVisibleMessage)
 
 	const singular = data.items.length === 1
-	const title = singular ? "Cline wants to use a subagent:" : "Cline wants to use subagents:"
+	const title = singular ? "Subagent Task" : "Subagent Pipeline"
 	const isPromptConstructionRow = message.ask === "use_subagents" || message.say === "use_subagents"
+
 	const toggleItem = (index: number) => {
 		setExpandedItems((prev) => ({
 			...prev,
 			[index]: !prev[index],
 		}))
 	}
+
 	const expandPrompt = (index: number) => {
 		setExpandedPrompts((prev) => ({
 			...prev,
@@ -213,12 +251,23 @@ export default function SubagentStatusRow({ message, isLast, lastModifiedMessage
 	}
 
 	return (
-		<div className="mb-2">
-			<div className="flex items-center gap-2.5 mb-3">
-				<NetworkIcon className="size-2 text-foreground" />
-				<span className="font-bold text-foreground">{title}</span>
+		<div className="mb-3 rounded-md border border-editor-group-border/60 p-2.5" style={{ backgroundColor: "var(--vscode-editor-background)" }}>
+			{/* Timeline Header */}
+			<div className="flex items-center gap-2 mb-3 pb-2 border-b border-editor-group-border/40">
+				<NetworkIcon className="w-3.5 h-3.5 text-foreground opacity-80" />
+				<span className="font-semibold text-xs text-foreground">{title}</span>
+				<span
+					className="ml-auto text-[10.5px] px-1.5 py-0.5 rounded-full font-mono"
+					style={{
+						backgroundColor: "var(--vscode-badge-background, rgba(255,255,255,0.08))",
+						color: "var(--vscode-badge-foreground, inherit)",
+					}}>
+					{data.items.length} {data.items.length === 1 ? "step" : "steps"}
+				</span>
 			</div>
-			<div className="space-y-2">
+
+			{/* Connected Tree Timeline */}
+			<div className="w-full">
 				{data.items.map((entry, index) => {
 					const displayStatus: DisplayStatus =
 						wasCancelled && (entry.status === "running" || entry.status === "pending") ? "cancelled" : entry.status
@@ -229,53 +278,98 @@ export default function SubagentStatusRow({ message, isLast, lastModifiedMessage
 					const isStreamingPromptUnderConstruction =
 						isPromptConstructionRow && message.partial === true && index === data.items.length - 1
 					const shouldShowStats = !isStreamingPromptUnderConstruction
-					const statsText = `${formatCount(entry.toolCalls)} tools called · ${formatCount(entry.contextTokens)} tokens · ${formatCost(entry.totalCost)}`
+					const statsText = `${formatCount(entry.toolCalls)} tools · ${formatCount(entry.contextTokens)} tokens · ${formatCost(entry.totalCost)}`
 					const latestToolCallText = entry.latestToolCall?.trim() || ""
+					const isLastItem = index === data.items.length - 1
+					const dotStyle = getDotStyle(displayStatus)
+
 					return (
-						<div
-							className="rounded-xs border border-editor-group-border px-2 py-1.5"
-							key={entry.index}
-							style={{ backgroundColor: "var(--vscode-editor-background)" }}>
-							<div className="flex items-start gap-2">
-								{statusIcon(displayStatus)}
-								<div className="min-w-0 flex-1">
-									<SubagentPromptText
-										isExpanded={expandedPrompts[entry.index] === true}
-										onShowMore={() => expandPrompt(entry.index)}
-										prompt={entry.prompt}
+						<div className="grid grid-cols-[16px_1fr] items-start gap-x-2.5 relative" key={entry.index}>
+							{/* Left: Dot & Connector Spine */}
+							<div className="flex flex-col items-center h-full">
+								<div
+									className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 box-border transition-colors duration-200"
+									style={dotStyle}>
+									{renderDotIcon(displayStatus)}
+								</div>
+								{!isLastItem && (
+									<div
+										className="w-[1.5px] grow my-1 rounded-full"
+										style={{
+											backgroundColor:
+												entry.status === "completed"
+													? "var(--vscode-tree-indentGuidesStroke, rgba(255, 255, 255, 0.22))"
+													: "var(--vscode-tree-inactiveIndentGuidesStroke, rgba(255, 255, 255, 0.08))",
+											minHeight: "14px",
+										}}
 									/>
-								</div>
+								)}
 							</div>
-							{shouldShowStats && (
-								<div className="mt-1 text-[11px] opacity-70 min-w-0 whitespace-pre-wrap break-words">
-									<span>{statsText}</span>
-								</div>
-							)}
-							{shouldShowStats && hasDetails && (
-								<button
-									aria-label={isExpanded ? "Hide subagent output" : "Show subagent output"}
-									className="mt-1 text-[11px] opacity-80 flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer text-left text-foreground w-full"
-									onClick={() => toggleItem(entry.index)}
-									type="button">
-									{isExpanded ? (
-										<ChevronDownIcon className="size-2 shrink-0" />
-									) : (
-										<ChevronRightIcon className="size-2 shrink-0" />
-									)}
-									<span className="shrink-0">{isExpanded ? "Hide output" : "Show output"}</span>
-								</button>
-							)}
-							{shouldShowStats && !hasDetails && latestToolCallText && (
-								<div className="mt-1 text-[10px] opacity-70 min-w-0 truncate font-mono">{latestToolCallText}</div>
-							)}
-							{isExpanded && entry.result && entry.status === "completed" && (
-								<div className="mt-2 text-xs opacity-80 wrap-anywhere overflow-hidden">
-									<MarkdownBlock markdown={entry.result} />
-								</div>
-							)}
-							{isExpanded && entry.error && entry.status === "failed" && (
-								<div className="mt-2 text-xs text-error whitespace-pre-wrap break-words">{entry.error}</div>
-							)}
+
+							{/* Right: Content Node */}
+							<div className={cn("min-w-0", !isLastItem ? "pb-3.5" : "pb-0.5")}>
+								<SubagentPromptText
+									isExpanded={expandedPrompts[entry.index] === true}
+									onShowMore={() => expandPrompt(entry.index)}
+									prompt={entry.prompt}
+								/>
+
+								{/* Tool Execution Badge */}
+								{shouldShowStats && latestToolCallText && (
+									<div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+										<span
+											className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border"
+											style={{
+												backgroundColor: "var(--vscode-editor-inactiveSelectionBackground, rgba(255,255,255,0.05))",
+												borderColor: "var(--vscode-editorGroup-border, rgba(255,255,255,0.1))",
+												color: "var(--vscode-textPreformat-foreground, inherit)",
+											}}>
+											<span className="opacity-60 text-[9px] font-sans font-semibold uppercase tracking-wider">TOOL</span>
+											<span className="truncate max-w-[220px]">{latestToolCallText}</span>
+										</span>
+									</div>
+								)}
+
+								{/* Metrics and Detail Toggle */}
+								{shouldShowStats && (
+									<div className="mt-1 flex items-center justify-between gap-2 text-[11px] opacity-70">
+										<span className="truncate">{statsText}</span>
+										{hasDetails && (
+											<button
+												aria-label={isExpanded ? "Hide subagent output" : "Show subagent output"}
+												className="flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer text-link hover:underline shrink-0 text-[11px]"
+												onClick={() => toggleItem(entry.index)}
+												type="button">
+												<span>{isExpanded ? "Hide output" : "Show output"}</span>
+												{isExpanded ? (
+													<ChevronDownIcon className="w-3 h-3 shrink-0" />
+												) : (
+													<ChevronRightIcon className="w-3 h-3 shrink-0" />
+												)}
+											</button>
+										)}
+									</div>
+								)}
+
+								{/* Collapsible Result / Error Card */}
+								{isExpanded && entry.result && entry.status === "completed" && (
+									<div
+										className="mt-2 text-xs rounded border p-2 wrap-anywhere overflow-hidden"
+										style={{
+											backgroundColor: "var(--vscode-editor-background)",
+											borderColor: "var(--vscode-editorGroup-border, rgba(255,255,255,0.1))",
+										}}>
+										<MarkdownBlock markdown={entry.result} />
+									</div>
+								)}
+								{isExpanded && entry.error && entry.status === "failed" && (
+									<div
+										className="mt-2 text-xs rounded border border-error/40 p-2 text-error whitespace-pre-wrap break-words"
+										style={{ backgroundColor: "rgba(241, 76, 76, 0.08)" }}>
+										{entry.error}
+									</div>
+								)}
+							</div>
 						</div>
 					)
 				})}
