@@ -21,13 +21,13 @@ export const ClinePassCard = () => {
 			<VSCodeDivider className="w-full mt-6 mb-3" />
 			<div className="flex items-center gap-2">
 				<Sparkles className="size-4 shrink-0 text-[var(--vscode-charts-yellow)]" />
-				<span className="text-base font-semibold">ClinePass</span>
+				<span className="text-base font-semibold">Anticeil Pass</span>
 			</div>
 
 			{isUsingClinePass ? (
 				<>
 					<p className="m-0 text-sm text-description">
-						You're using the ClinePass provider. Manage your subscription and view usage from your dashboard.
+						You're using the Anticeil Pass provider. Manage your subscription and view usage from your dashboard.
 					</p>
 					<div className="w-full flex gap-2 flex-col min-[225px]:flex-row">
 						<div className="w-full min-[225px]:w-1/2">
@@ -46,14 +46,14 @@ export const ClinePassCard = () => {
 					<div className="w-full flex gap-2 flex-col min-[225px]:flex-row">
 						<div className="w-full min-[225px]:w-1/2">
 							<VSCodeButtonLink appearance="primary" className="w-full" href={subscribeUrl}>
-								Get ClinePass
+								Get Anticeil Pass
 							</VSCodeButtonLink>
 						</div>
 						<VSCodeButton
 							appearance="secondary"
 							className="w-full min-[225px]:w-1/2"
 							onClick={() => void switchToClinePassProvider()}>
-							Use ClinePass Provider
+							Use Anticeil Pass Provider
 						</VSCodeButton>
 					</div>
 				</>
@@ -78,7 +78,7 @@ export const ClinePassWelcomeCallout = () => {
 			data-testid="cline-pass-welcome-callout">
 			<Sparkles className="size-4 shrink-0 mt-0.5 text-[var(--vscode-charts-yellow)]" />
 			<p className="m-0 text-xs text-description">
-				<span className="font-semibold text-foreground">ClinePass</span> — a low-cost monthly subscription for the latest
+				<span className="font-semibold text-foreground">Anticeil Pass</span> — a low-cost monthly subscription for the latest
 				open-weights models, much cheaper than direct API access. Sign up to subscribe from your dashboard.
 			</p>
 		</div>

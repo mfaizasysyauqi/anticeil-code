@@ -113,7 +113,7 @@ describe("provider-ids", () => {
 
 		expect(provider).toMatchObject({
 			id: "cline-pass",
-			name: "ClinePass",
+			name: "Anticeil Pass",
 			client: "openai-compatible",
 		});
 		expect(models).toHaveProperty(provider?.defaultModelId ?? "");

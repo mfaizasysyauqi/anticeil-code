@@ -147,13 +147,13 @@ const ContextWindow: React.FC<ContextWindowProgressProps> = ({
 	}
 
 	return (
-		<div className="flex flex-col mt-1.5" onMouseLeave={debounceCloseHover}>
-			<div className="flex gap-1 flex-row @max-xs:flex-col @max-xs:items-start items-center text-sm">
-				<div className="flex items-center gap-1.5 flex-1 whitespace-nowrap">
-					<span className="cursor-pointer text-sm" title="Current tokens used in this request">
+		<div className="flex flex-col mb-0.5" onMouseLeave={debounceCloseHover}>
+			<div className="flex gap-2 flex-row items-center text-xs">
+				<div className="flex items-center gap-2 flex-1 min-w-0 whitespace-nowrap">
+					<span className="cursor-pointer text-[11px] font-mono text-description" title="Current tokens used in this request">
 						{formatTokenNumber(tokenData.used)}
 					</span>
-					<div className="flex relative items-center gap-1 flex-1 w-full h-full" onMouseEnter={() => setIsOpened(true)}>
+					<div className="flex relative items-center gap-1 flex-1 w-full h-full min-w-[60px]" onMouseEnter={() => setIsOpened(true)}>
 						<HoverCard>
 							<HoverCardContent className="bg-menu rounded-xs shadow-sm">
 								<ContextWindowSummary
@@ -167,14 +167,13 @@ const ContextWindow: React.FC<ContextWindowProgressProps> = ({
 								/>
 							</HoverCardContent>
 							<HoverCardTrigger asChild>
-								{/* TODO: Re-add role="slider", aria-value*, onKeyDown, onClick, and tabIndex
-								    when click-to-set-threshold is implemented. See PR #9348 for context. */}
 								<div
-									className="relative w-full text-foreground context-window-progress brightness-100"
+									className="relative w-full text-foreground context-window-progress brightness-100 py-1 cursor-pointer"
 									onFocus={handleFocus}
 									ref={progressBarRef}>
 									<Progress
 										aria-label="Context window usage progress"
+										className="h-1.5 rounded-full"
 										color="success"
 										value={tokenData.percentage}
 									/>
@@ -183,11 +182,11 @@ const ContextWindow: React.FC<ContextWindowProgressProps> = ({
 							</HoverCardTrigger>
 						</HoverCard>
 					</div>
-					<span className="cursor-pointer text-sm" title="Maximum context window size for this model">
+					<span className="cursor-pointer text-[11px] font-mono text-description" title="Maximum context window size for this model">
 						{formatTokenNumber(tokenData.max)}
 					</span>
 				</div>
-				<CompactTaskButton onClick={handleCompactClick} />
+				<CompactTaskButton className="opacity-70 hover:opacity-100 transition-opacity" onClick={handleCompactClick} />
 			</div>
 			{confirmationNeeded && <ConfirmationDialog onCancel={handleCancel} onConfirm={handleConfirm} />}
 		</div>

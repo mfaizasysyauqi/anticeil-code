@@ -508,11 +508,15 @@ export const ExtensionStateContextProvider: React.FC<{
 			},
 		})
 
+		// Helper to check if this webview is in the sidebar
+		const isSidebarWebview = () => typeof window === "undefined" || window.__VIEW_MODE__ !== "editor"
+
 		// Subscribe to MCP button clicked events with webview type
 		mcpButtonUnsubscribeRef.current = UiServiceClient.subscribeToMcpButtonClicked(
 			{},
 			{
 				onResponse: () => {
+					if (!isSidebarWebview()) return
 					console.log("[DEBUG] Received mcpButtonClicked event from gRPC stream")
 					navigateToMarketplace()
 				},
@@ -527,6 +531,7 @@ export const ExtensionStateContextProvider: React.FC<{
 
 		marketplaceButtonUnsubscribeRef.current = UiServiceClient.subscribeToMarketplaceButtonClicked(EmptyRequest.create({}), {
 			onResponse: () => {
+				if (!isSidebarWebview()) return
 				console.log("[DEBUG] Received marketplaceButtonClicked event from gRPC stream")
 				navigateToMarketplace()
 			},
@@ -543,6 +548,7 @@ export const ExtensionStateContextProvider: React.FC<{
 			{},
 			{
 				onResponse: () => {
+					if (!isSidebarWebview()) return
 					// When history button is clicked, navigate to history view
 					console.log("[DEBUG] Received history button clicked event from gRPC stream")
 					navigateToHistory()
@@ -561,6 +567,7 @@ export const ExtensionStateContextProvider: React.FC<{
 			{},
 			{
 				onResponse: () => {
+					if (!isSidebarWebview()) return
 					// When chat button is clicked, navigate to chat
 					console.log("[DEBUG] Received chat button clicked event from gRPC stream")
 					navigateToChat()
@@ -591,6 +598,7 @@ export const ExtensionStateContextProvider: React.FC<{
 		// Set up settings button clicked subscription
 		settingsButtonClickedSubscriptionRef.current = UiServiceClient.subscribeToSettingsButtonClicked(EmptyRequest.create({}), {
 			onResponse: () => {
+				if (!isSidebarWebview()) return
 				// When settings button is clicked, navigate to settings
 				navigateToSettings()
 			},
@@ -607,6 +615,7 @@ export const ExtensionStateContextProvider: React.FC<{
 			EmptyRequest.create({}),
 			{
 				onResponse: () => {
+					if (!isSidebarWebview()) return
 					// When worktrees button is clicked, navigate to worktrees
 					navigateToWorktrees()
 				},
@@ -698,6 +707,7 @@ export const ExtensionStateContextProvider: React.FC<{
 		// Set up account button clicked subscription
 		accountButtonClickedSubscriptionRef.current = UiServiceClient.subscribeToAccountButtonClicked(EmptyRequest.create(), {
 			onResponse: () => {
+				if (!isSidebarWebview()) return
 				// When account button is clicked, navigate to account view
 				console.log("[DEBUG] Received account button clicked event from gRPC stream")
 				navigateToAccount()

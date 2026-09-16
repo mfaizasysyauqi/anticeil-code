@@ -2,7 +2,7 @@
 	"name": "anticeil-code",
 	"displayName": "Anticeil Code",
 	"description": "Autonomous agentic coding assistant for VS Code powered by Anticeil Docs Studio & multi-provider BYOK.",
-	"version": "4.1.20",
+	"version": "4.1.31",
 	"icon": "assets/icons/icon.png",
 	"engines": {
 		"vscode": "^1.101.0"
@@ -129,7 +129,7 @@
 		"commands": [
 			{
 				"command": "cline.plusButtonClicked",
-				"title": "New Task",
+				"title": "New Session",
 				"icon": "$(add)"
 			},
 			{
@@ -241,6 +241,8 @@
 			},
 			{
 				"command": "cline.generateGitCommitMessage",
+				"key": "ctrl+alt+g",
+				"mac": "cmd+alt+g",
 				"when": "config.git.enabled && scmProvider == git"
 			},
 			{

@@ -11,31 +11,37 @@ const ENV_DISPLAY_NAMES: Record<Environment, string> = {
 
 type ViewHeaderProps = {
 	title: string
-	onDone: () => void
+	onDone?: () => void
 	showEnvironmentSuffix?: boolean
 	environment?: Environment
+	actionButton?: React.ReactNode
 }
 
-const ViewHeader = ({ title, onDone, showEnvironmentSuffix, environment }: ViewHeaderProps) => {
+const ViewHeader = ({ title, onDone, showEnvironmentSuffix, environment, actionButton }: ViewHeaderProps) => {
 	const showSubtext = showEnvironmentSuffix && environment && environment !== "production"
 	const capitalizedEnv = environment ? ENV_DISPLAY_NAMES[environment] : ""
 	const titleColor = getEnvironmentColor(environment)
 
 	return (
-		<div className="flex justify-between items-center py-2.5 px-5 mb-[17px]">
+		<div className="flex justify-between items-center py-2.5 px-4 mb-[12px]">
 			<div className="relative">
-				<h3 className="m-0 text-lg font-normal" style={{ color: titleColor }}>
+				<h3 className="m-0 text-base font-semibold" style={{ color: titleColor }}>
 					{title}
 				</h3>
 				{showSubtext && (
-					<span className="absolute left-0 top-8 -translate-y-1 text-xs text-description whitespace-nowrap">
+					<span className="absolute left-0 top-6 -translate-y-1 text-xs text-description whitespace-nowrap">
 						{capitalizedEnv} environment
 					</span>
 				)}
 			</div>
-			<Button size="header" onClick={onDone}>
-				Done
-			</Button>
+			<div className="flex items-center gap-2">
+				{actionButton}
+				{onDone && (
+					<Button size="header" onClick={onDone}>
+						Done
+					</Button>
+				)}
+			</div>
 		</div>
 	)
 }

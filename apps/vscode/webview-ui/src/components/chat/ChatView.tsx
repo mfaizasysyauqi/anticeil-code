@@ -100,9 +100,8 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 	//const task = messages.length > 0 ? (messages[0].say === "task" ? messages[0] : undefined) : undefined) : undefined
 	const task = useMemo(() => displayMessages.at(0), [displayMessages]) // leaving this less safe version here since if the first message is not a task, then the extension is in a bad state and needs to be debugged (see Cline.abort)
 	const modifiedMessages = useMemo(() => {
-		const slicedMessages = displayMessages.slice(1)
 		// Only combine hook sequences if hooks are enabled
-		const withHooks = hooksEnabled ? combineHookSequences(slicedMessages) : slicedMessages
+		const withHooks = hooksEnabled ? combineHookSequences(displayMessages) : displayMessages
 		return combineApiRequests(combineCommandSequences(withHooks))
 	}, [displayMessages, hooksEnabled])
 	// has to be after api_req_finished are all reduced into api_req_started messages
@@ -387,6 +386,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 						selectedModelInfo={{
 							supportsPromptCache: selectedModelInfo.supportsPromptCache,
 							supportsImages: selectedModelInfo.supportsImages || false,
+							contextWindow: selectedModelInfo.contextWindow,
 						}}
 						task={task}
 					/>

@@ -6,7 +6,6 @@ import { GitBranch, Sparkles } from "lucide-react"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import BannerCarousel, { BannerData } from "@/components/common/BannerCarousel"
 import WhatsNewModal from "@/components/common/WhatsNewModal"
-import HistoryPreview from "@/components/history/HistoryPreview"
 import { useApiConfigurationHandlers } from "@/components/settings/utils/useApiConfigurationHandlers"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -255,7 +254,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 		return {
 			id: CLINE_PASS_PROMO_BANNER_ID,
 			icon: <Sparkles className="size-4 text-[var(--vscode-charts-yellow)]" />,
-			title: "Try ClinePass",
+			title: "Try Anticeil Pass",
 			description: (
 				<div className="flex flex-col gap-2">
 					<p className="m-0">
@@ -264,14 +263,14 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 					</p>
 					<div>
 						<Button onClick={openSubscribePage} size="sm">
-							Get ClinePass
+							Get Anticeil Pass
 						</Button>
 					</div>
 					<button
 						className="w-fit cursor-pointer border-0 bg-transparent p-0 text-left text-xs text-[var(--vscode-textLink-foreground)] underline hover:text-[var(--vscode-textLink-activeForeground,var(--vscode-textLink-foreground))]"
 						onClick={() => void switchToClinePassProvider()}
 						type="button">
-						Switch to ClinePass provider to access subscription.
+						Switch to Anticeil Pass provider to access subscription.
 					</button>
 				</div>
 			),
@@ -313,7 +312,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 	}, [bannerConfig, banners, clineUser, handleBannerAction, handleBannerDismiss, clinePassPromoBanner])
 
 	return (
-		<div className="flex flex-col flex-1 w-full h-full p-0 m-0">
+		<div className="flex flex-col flex-1 w-full h-full p-0 m-0 justify-center items-center overflow-hidden">
 			<WhatsNewModal
 				onBannerAction={handleBannerAction}
 				onClose={handleCloseWhatsNewModal}
@@ -321,12 +320,11 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 				version={version}
 				welcomeBanners={welcomeBanners}
 			/>
-			<div className="overflow-y-auto flex flex-col pb-2.5">
+			<div className="overflow-y-auto flex flex-col items-center justify-center w-full my-auto pb-2.5">
 				<HomeHeader shouldShowQuickWins={shouldShowQuickWins} />
 				{!showWhatsNewModal && (
 					<>
 						<BannerCarousel banners={activeBanners} />
-						{!shouldShowQuickWins && taskHistory.length > 0 && <HistoryPreview showHistoryView={showHistoryView} />}
 						{/* Quick launch worktree button */}
 						{isGitRepo && worktreesEnabled?.featureFlag && worktreesEnabled?.user && (
 							<div className="flex flex-col items-center gap-3 mt-2 mb-4 px-5">

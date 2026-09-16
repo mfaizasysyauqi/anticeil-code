@@ -71,7 +71,15 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({
 	}, [messageOrGroup, groupedMessages, index])
 
 	if (isToolGroup(messageOrGroup)) {
-		return <ToolGroupRenderer allMessages={modifiedMessages} isLastGroup={isLastToolGroup} messages={messageOrGroup} />
+		return (
+			<div
+				className={cn("relative pt-2.5 px-4", {
+					"pb-2.5": isLastMessage && !footerActive,
+				})}
+				data-message-ts={messageOrGroup[0]?.ts}>
+				<ToolGroupRenderer allMessages={modifiedMessages} isLastGroup={isLastToolGroup} messages={messageOrGroup} />
+			</div>
+		)
 	}
 
 	// Browser session group

@@ -256,7 +256,7 @@ describe("ErrorRow", () => {
 			render(<ErrorRow apiRequestFailedMessage={rawMessage} errorType="error" message={mockMessage} />)
 
 			expect(screen.getByTestId("org-cline-pass-restriction-error")).toBeInTheDocument()
-			expect(screen.getByText(/Organization accounts cannot use ClinePass subscriptions/)).toBeInTheDocument()
+			expect(screen.getByText(/Organization accounts cannot use Anticeil Pass subscriptions/)).toBeInTheDocument()
 			expect(screen.queryByText(rawMessage)).not.toBeInTheDocument()
 
 			fireEvent.click(screen.getByText("Switch to personal account"))

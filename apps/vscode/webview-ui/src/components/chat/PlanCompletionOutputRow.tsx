@@ -16,10 +16,10 @@ interface PlanCompletionOutputProps {
  */
 const PlanCompletionOutputRow = memo(({ text }: PlanCompletionOutputProps) => {
 	return (
-		<div className="rounded-sm border border-warning/20 overflow-visible bg-warning/10">
-			<div className="flex items-center justify-between gap-2 pl-2 pr-1 pt-1 -mb-1.5">
-				<span className="text-xs font-medium uppercase tracking-wider text-warning/70">Plan</span>
-				<CopyButton ariaLabel="Copy plan response" className="text-warning/70" textToCopy={text} />
+		<div className="rounded-sm border border-editor-group-border/40 overflow-visible bg-vscode-editor-background/50">
+			<div className="flex items-center justify-between gap-2 pl-2 pr-1 pt-1 -mb-1">
+				<span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground">Plan</span>
+				<CopyButton ariaLabel="Copy plan response" className="opacity-70 hover:opacity-100" textToCopy={text} />
 			</div>
 			<div className="plan-completion-content p-2 w-full [&_hr]:opacity-20 [&_p:last-child]:mb-0">
 				<div className="wrap-anywhere [&_hr]:opacity-20">

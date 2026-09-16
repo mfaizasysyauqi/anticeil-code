@@ -3,6 +3,7 @@ import { EmptyRequest, StringRequest } from "@shared/proto/cline/common"
 import { AskResponseRequest, NewTaskRequest } from "@shared/proto/cline/task"
 import { IntentEvent } from "@shared/proto/cline/ui"
 import { useCallback, useRef } from "react"
+import { PLATFORM_CONFIG } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { SlashServiceClient, TaskServiceClient, UiServiceClient } from "@/services/grpc-client"
 import type { ButtonActionType } from "../shared/buttonConfig"
@@ -184,6 +185,7 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 					})
 					try {
 						await TaskServiceClient.newTask(request)
+						PLATFORM_CONFIG.postMessage({ type: "openInEditor", taskTitle: messageToSend })
 					} catch (error) {
 						rollbackPendingResponse(id, optimisticMessage)
 						restorePendingMessageState()

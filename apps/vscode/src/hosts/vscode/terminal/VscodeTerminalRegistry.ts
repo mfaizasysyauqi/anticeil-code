@@ -1,5 +1,16 @@
+import path from "node:path"
 import * as vscode from "vscode"
+import { HostProvider } from "@/hosts/host-provider"
 import { Logger } from "@/shared/services/Logger"
+
+function getTerminalIcon(): vscode.Uri | vscode.ThemeIcon {
+	try {
+		if (HostProvider.isInitialized() && HostProvider.get().extensionFsPath) {
+			return vscode.Uri.file(path.join(HostProvider.get().extensionFsPath, "assets", "icons", "anticeil-logo.svg"))
+		}
+	} catch {}
+	return new vscode.ThemeIcon("terminal")
+}
 
 export interface TerminalInfo {
 	terminal: vscode.Terminal
@@ -25,9 +36,10 @@ export class TerminalRegistry {
 	static createTerminal(cwd?: string | vscode.Uri | undefined, shellPath?: string): TerminalInfo {
 		const terminalOptions: vscode.TerminalOptions = {
 			cwd,
-			name: "Cline",
-			iconPath: new vscode.ThemeIcon("cline-icon"),
+			name: "Anticeil",
+			iconPath: getTerminalIcon(),
 			env: {
+				ANTICEIL_ACTIVE: "true",
 				CLINE_ACTIVE: "true",
 				// Override $SHELL to match the selected shell profile so that
 				// child processes (make, npm scripts, etc.) that read $SHELL

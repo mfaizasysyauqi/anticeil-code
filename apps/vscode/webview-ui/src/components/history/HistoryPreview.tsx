@@ -1,5 +1,6 @@
 import { StringRequest } from "@shared/proto/cline/common"
 import { memo } from "react"
+import { PLATFORM_CONFIG } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { useUsageCostVisibility } from "@/hooks/useUsageCostVisibility"
 import { TaskServiceClient } from "@/services/grpc-client"
@@ -15,6 +16,7 @@ const HistoryPreview = ({ showHistoryView }: HistoryPreviewProps) => {
 		TaskServiceClient.showTaskWithId(StringRequest.create({ value: id })).catch((error) =>
 			console.error("Error showing task:", error),
 		)
+		PLATFORM_CONFIG.postMessage({ type: "openInEditor" })
 	}
 
 	const formatDate = (timestamp: number) => {

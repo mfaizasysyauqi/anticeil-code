@@ -1,4 +1,4 @@
-import type { Boolean, EmptyRequest } from "@shared/proto/cline/common"
+import type { Boolean as ProtoBoolean, EmptyRequest } from "@shared/proto/cline/common"
 import { useCallback, useEffect } from "react"
 import AccountView from "./components/account/AccountView"
 import ChatView from "./components/chat/ChatView"
@@ -13,6 +13,12 @@ import { useClineAuth } from "./context/ClineAuthContext"
 import { useExtensionState } from "./context/ExtensionStateContext"
 import { Providers } from "./Providers"
 import { UiServiceClient } from "./services/grpc-client"
+
+declare global {
+	interface Window {
+		__VIEW_MODE__?: "sidebar" | "editor"
+	}
+}
 
 const AppContent = () => {
 	const {
@@ -38,14 +44,19 @@ const AppContent = () => {
 		hideWorktrees,
 		closeMarketplaceView,
 		hideAnnouncement,
+		clineMessages,
 	} = useExtensionState()
+
+	const isSidebar = typeof window !== "undefined" && window.__VIEW_MODE__ === "sidebar"
+	const isOtherViewActive = Boolean(showSettings || showMarketplace || showMcp || showAccount || showWorktrees)
+	const shouldShowHistory = !isOtherViewActive && (showHistory || isSidebar)
 
 	const { clineUser, organizations, activeOrganization } = useClineAuth()
 
 	const showUpdateAnnouncementModal = useCallback(() => {
 		setShowAnnouncement(true)
 		UiServiceClient.onDidShowAnnouncement({} as EmptyRequest)
-			.then((response: Boolean) => {
+			.then((response: ProtoBoolean) => {
 				setShouldShowAnnouncement(response.value)
 			})
 			.catch((error) => {
@@ -77,10 +88,12 @@ const AppContent = () => {
 	}
 
 	return (
-		<div className="flex h-screen w-full flex-col">
+		<div className="flex flex-col h-screen w-full overflow-hidden">
 			{showSettings && <SettingsView onDone={hideSettings} targetSection={settingsTargetSection} />}
-			{showHistory && <HistoryView onDone={hideHistory} />}
-			{showMarketplace && <MarketplaceView initialType={mcpTab ? "mcp" : undefined} onDone={closeMarketplaceView} />}
+			{shouldShowHistory && <HistoryView onDone={hideHistory} />}
+			{showMarketplace && (
+				<MarketplaceView initialType={mcpTab ? "mcp" : undefined} onDone={closeMarketplaceView} />
+			)}
 			{showMcp && <McpView initialTab={mcpTab} onDone={closeMcpView} />}
 			{showAccount && (
 				<AccountView
@@ -91,10 +104,10 @@ const AppContent = () => {
 				/>
 			)}
 			{showWorktrees && <WorktreesView onDone={hideWorktrees} />}
-			{/* Do not conditionally load ChatView, it's expensive and there's state we don't want to lose (user input, disableInput, askResponse promise, etc.) */}
+			{/* Do not conditionally load ChatView to preserve state when switching between views */}
 			<ChatView
 				hideAnnouncement={hideAnnouncement}
-				isHidden={showSettings || showHistory || showMarketplace || showMcp || showAccount || showWorktrees}
+				isHidden={showSettings || shouldShowHistory || showMarketplace || showMcp || showAccount || showWorktrees}
 				showAnnouncement={showAnnouncement}
 				showHistoryView={navigateToHistory}
 			/>

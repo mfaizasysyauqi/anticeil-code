@@ -39,8 +39,8 @@ describe("ClinePassCard", () => {
 	it("promotes ClinePass when the user is not on the ClinePass provider", () => {
 		mockPromo()
 		render(<ClinePassCard />)
-		expect(screen.getByText("Get ClinePass")).toBeInTheDocument()
-		expect(screen.getByText("Use ClinePass Provider")).toBeInTheDocument()
+		expect(screen.getByText("Get Anticeil Pass")).toBeInTheDocument()
+		expect(screen.getByText("Use Anticeil Pass Provider")).toBeInTheDocument()
 		expect(screen.queryByText("Manage Subscription")).not.toBeInTheDocument()
 	})
 
@@ -48,7 +48,7 @@ describe("ClinePassCard", () => {
 		const switchToClinePassProvider = vi.fn().mockResolvedValue(undefined)
 		mockPromo({ switchToClinePassProvider })
 		render(<ClinePassCard />)
-		fireEvent.click(screen.getByText("Use ClinePass Provider"))
+		fireEvent.click(screen.getByText("Use Anticeil Pass Provider"))
 		expect(switchToClinePassProvider).toHaveBeenCalledTimes(1)
 	})
 
@@ -56,7 +56,7 @@ describe("ClinePassCard", () => {
 		mockPromo({ isUsingClinePass: true })
 		render(<ClinePassCard />)
 		expect(screen.getByText("Manage Subscription")).toBeInTheDocument()
-		expect(screen.queryByText("Get ClinePass")).not.toBeInTheDocument()
+		expect(screen.queryByText("Get Anticeil Pass")).not.toBeInTheDocument()
 	})
 })
 
@@ -74,6 +74,6 @@ describe("ClinePassWelcomeCallout", () => {
 	it("mentions ClinePass when promotions are enabled", () => {
 		mockPromo()
 		render(<ClinePassWelcomeCallout />)
-		expect(screen.getByTestId("cline-pass-welcome-callout")).toHaveTextContent("ClinePass")
+		expect(screen.getByTestId("cline-pass-welcome-callout")).toHaveTextContent("Anticeil Pass")
 	})
 })

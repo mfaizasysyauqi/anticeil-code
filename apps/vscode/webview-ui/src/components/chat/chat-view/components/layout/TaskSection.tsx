@@ -1,6 +1,6 @@
 import { ClineMessage } from "@shared/ExtensionMessage"
 import React from "react"
-import TaskHeader from "@/components/chat/task-header/TaskHeader"
+import ContextWindow from "@/components/chat/task-header/ContextWindow"
 import { MessageHandlers } from "../../types/chatTypes"
 
 interface TaskSectionProps {
@@ -16,33 +16,33 @@ interface TaskSectionProps {
 	selectedModelInfo: {
 		supportsPromptCache: boolean
 		supportsImages: boolean
+		contextWindow?: number
 	}
 	messageHandlers: MessageHandlers
 }
 
 /**
  * Task section shown when there's an active task
- * Includes the task header and manages task-specific UI
+ * Includes the context window progress bar and compact button
  */
 export const TaskSection: React.FC<TaskSectionProps> = ({
-	task,
 	apiMetrics,
 	lastApiReqTotalTokens,
 	selectedModelInfo,
 	messageHandlers,
 }) => {
 	return (
-		<TaskHeader
-			cacheReads={apiMetrics.totalCacheReads}
-			cacheWrites={apiMetrics.totalCacheWrites}
-			doesModelSupportPromptCache={selectedModelInfo.supportsPromptCache}
-			lastApiReqTotalTokens={lastApiReqTotalTokens}
-			onClose={messageHandlers.handleTaskCloseButtonClick}
-			onSendMessage={messageHandlers.handleSendMessage}
-			task={task}
-			tokensIn={apiMetrics.totalTokensIn}
-			tokensOut={apiMetrics.totalTokensOut}
-			totalCost={apiMetrics.totalCost}
-		/>
+		<div className="pt-2 pb-1 px-4 flex flex-col gap-1.5">
+			<ContextWindow
+				cacheReads={apiMetrics.totalCacheReads}
+				cacheWrites={apiMetrics.totalCacheWrites}
+				contextWindow={selectedModelInfo.contextWindow}
+				lastApiReqTotalTokens={lastApiReqTotalTokens}
+				onSendMessage={messageHandlers.handleSendMessage}
+				tokensIn={apiMetrics.totalTokensIn}
+				tokensOut={apiMetrics.totalTokensOut}
+				useAutoCondense={false}
+			/>
+		</div>
 	)
 }

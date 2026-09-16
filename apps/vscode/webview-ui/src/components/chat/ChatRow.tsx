@@ -97,6 +97,55 @@ interface ChatRowContentProps extends Omit<ChatRowProps, "onHeightChange" | "onL
 export const ProgressIndicator = () => <LoaderCircleIcon className="size-2 mr-2 animate-spin" />
 const InvisibleSpacer = () => <div aria-hidden className="h-px" />
 
+// Persistent cache so submitted user message bubble colors are locked to their turn mode
+const messageModeCache = new Map<number, string>()
+
+const getPersistentMessageMode = (messageTs: number | undefined, messages: ClineMessage[], fallbackMode: string): string => {
+	if (!messageTs) {
+		return fallbackMode
+	}
+
+	if (messageModeCache.has(messageTs)) {
+		return messageModeCache.get(messageTs)!
+	}
+
+	const messageIndex = messages.findIndex((m) => m.ts === messageTs)
+	let determinedMode: string | undefined
+
+	if (messageIndex !== -1) {
+		for (let i = messageIndex + 1; i < messages.length; i++) {
+			const nextMsg = messages[i]
+			if (nextMsg.say === "user_feedback") {
+				break
+			}
+			if (nextMsg.say === "plan_completion_result") {
+				determinedMode = "plan"
+				break
+			}
+			if (nextMsg.say === "tool" || nextMsg.say === "command" || nextMsg.say === "completion_result") {
+				determinedMode = "act"
+				break
+			}
+			if (nextMsg.say === "text" && nextMsg.text) {
+				const lower = nextMsg.text.toLowerCase()
+				if (lower.includes("plan mode") || lower.includes("in plan mode")) {
+					determinedMode = "plan"
+					break
+				}
+				if (lower.includes("act mode") || lower.includes("in act mode")) {
+					determinedMode = "act"
+					break
+				}
+			}
+		}
+	}
+
+	const finalMode = determinedMode ?? fallbackMode
+	// Lock the mode for this message timestamp
+	messageModeCache.set(messageTs, finalMode)
+	return finalMode
+}
+
 const ChatRow = memo(
 	(props: ChatRowProps) => {
 		const { isLast, onHeightChange, message } = props
@@ -307,12 +356,12 @@ export const ChatRowContent = memo(
 				case "mistake_limit_reached":
 					return [
 						<CircleXIcon className="text-error size-2" />,
-						<span className="text-error font-bold">Cline is having trouble...</span>,
+						<span className="text-error font-bold">Having trouble...</span>,
 					]
 				case "command":
 					return [
 						<TerminalIcon className="text-foreground size-2" />,
-						<span className="font-bold text-foreground">Cline wants to execute this command:</span>,
+						<span className="font-bold text-foreground">Execute command:</span>,
 					]
 				case "use_mcp_server":
 					const mcpServerUse = JSON.parse(message.text || "{}") as ClineAskUseMcpServer
@@ -323,8 +372,8 @@ export const ChatRowContent = memo(
 							<span className="codicon codicon-server text-foreground mb-[-1.5px]" />
 						),
 						<span className="ph-no-capture font-bold text-foreground break-words">
-							Cline wants to {mcpServerUse.type === "use_mcp_tool" ? "use a tool" : "access a resource"} on the{" "}
-							<code className="break-all">{mcpServerUse.serverName}</code> MCP server:
+							{mcpServerUse.type === "use_mcp_tool" ? "Use MCP tool" : "Access MCP resource"} on the{" "}
+							<code className="break-all">{mcpServerUse.serverName}</code> server:
 						</span>,
 					]
 				case "api_req_started":
@@ -334,7 +383,7 @@ export const ChatRowContent = memo(
 				case "followup":
 					return [
 						<span className="codicon codicon-question text-foreground mb-[-1.5px]" />,
-						<span className="font-bold text-foreground">Cline has a question:</span>,
+						<span className="font-bold text-foreground">Question:</span>,
 					]
 				default:
 					return [null, null]
@@ -403,8 +452,8 @@ export const ChatRowContent = memo(
 					const content = tool?.content || ""
 					const isApplyingPatch = content?.startsWith("%%bash") && !content.endsWith("*** End Patch\nEOF")
 					const editToolTitle = isApplyingPatch
-						? "Cline is creating patches to edit this file:"
-						: "Cline wants to edit this file:"
+						? "Creating patches to edit this file:"
+						: "Edit file:"
 					return (
 						<div>
 							<div className={HEADER_CLASSNAMES}>
@@ -438,7 +487,7 @@ export const ChatRowContent = memo(
 								<SquareMinusIcon className="size-2" />
 								{tool.operationIsLocatedInWorkspace === false &&
 									toolIcon("sign-out", "yellow", -90, "This file is outside of your workspace")}
-								<span style={{ fontWeight: "bold" }}>Cline wants to delete this file:</span>
+								<span style={{ fontWeight: "bold" }}>Delete file:</span>
 							</div>
 							<CodeAccordian
 								// isLoading={message.partial}
@@ -456,7 +505,7 @@ export const ChatRowContent = memo(
 								<FilePlus2Icon className="size-2" />
 								{tool.operationIsLocatedInWorkspace === false &&
 									toolIcon("sign-out", "yellow", -90, "This file is outside of your workspace")}
-								<span className="font-bold">Cline wants to create a new file:</span>
+								<span className="font-bold">Create new file:</span>
 							</div>
 							{backgroundEditEnabled && tool.path && tool.content ? (
 								<DiffEditRow patch={tool.content} path={tool.path} startLineNumbers={tool.startLineNumbers} />
@@ -479,7 +528,7 @@ export const ChatRowContent = memo(
 								{isImage ? <ImageUpIcon className="size-2" /> : <FileCode2Icon className="size-2" />}
 								{tool.operationIsLocatedInWorkspace === false &&
 									toolIcon("sign-out", "yellow", -90, "This file is outside of your workspace")}
-								<span className="font-bold">Cline wants to read this file:</span>
+								<span className="font-bold">Read file:</span>
 							</div>
 							<div className="bg-code rounded-sm overflow-hidden border border-editor-group-border">
 								<div
@@ -520,8 +569,8 @@ export const ChatRowContent = memo(
 									toolIcon("sign-out", "yellow", -90, "This is outside of your workspace")}
 								<span style={{ fontWeight: "bold" }}>
 									{message.type === "ask"
-										? "Cline wants to view the top level files in this directory:"
-										: "Cline viewed the top level files in this directory:"}
+										? "View top level files in this directory:"
+										: "Viewed top level files in this directory:"}
 								</span>
 							</div>
 							<CodeAccordian
@@ -542,8 +591,8 @@ export const ChatRowContent = memo(
 									toolIcon("sign-out", "yellow", -90, "This is outside of your workspace")}
 								<span style={{ fontWeight: "bold" }}>
 									{message.type === "ask"
-										? "Cline wants to recursively view all files in this directory:"
-										: "Cline recursively viewed all files in this directory:"}
+										? "Recursively view all files in this directory:"
+										: "Recursively viewed all files in this directory:"}
 								</span>
 							</div>
 							<CodeAccordian
@@ -564,8 +613,8 @@ export const ChatRowContent = memo(
 									toolIcon("sign-out", "yellow", -90, "This file is outside of your workspace")}
 								<span style={{ fontWeight: "bold" }}>
 									{message.type === "ask"
-										? "Cline wants to view source code definition names used in this directory:"
-										: "Cline viewed source code definition names used in this directory:"}
+										? "View source code definition names in this directory:"
+										: "Viewed source code definition names in this directory:"}
 								</span>
 							</div>
 							<CodeAccordian
@@ -584,7 +633,7 @@ export const ChatRowContent = memo(
 								{tool.operationIsLocatedInWorkspace === false &&
 									toolIcon("sign-out", "yellow", -90, "This is outside of your workspace")}
 								<span className="font-bold">
-									Cline wants to search this directory for <code className="break-all">{tool.regex}</code>:
+									Search this directory for <code className="break-all">{tool.regex}</code>:
 								</span>
 							</div>
 							<SearchResultsDisplay
@@ -601,7 +650,7 @@ export const ChatRowContent = memo(
 						<div>
 							<div className={HEADER_CLASSNAMES}>
 								<FoldVerticalIcon className="size-2" />
-								<span className="font-bold">Cline is condensing the conversation:</span>
+								<span className="font-bold">Condensing conversation:</span>
 							</div>
 							<div className="bg-code overflow-hidden border border-editor-group-border rounded-[3px]">
 								<div
@@ -645,8 +694,8 @@ export const ChatRowContent = memo(
 									toolIcon("sign-out", "yellow", -90, "This URL is external")}
 								<span className="font-bold">
 									{message.type === "ask"
-										? "Cline wants to fetch content from this URL:"
-										: "Cline fetched content from this URL:"}
+										? "Fetch content from this URL:"
+										: "Fetched content from this URL:"}
 								</span>
 							</div>
 							<div
@@ -674,8 +723,8 @@ export const ChatRowContent = memo(
 									toolIcon("sign-out", "yellow", -90, "This search is external")}
 								<span className="font-bold">
 									{message.type === "ask"
-										? "Cline wants to search the web for:"
-										: "Cline searched the web for:"}
+										? "Search the web for:"
+										: "Searched the web for:"}
 								</span>
 							</div>
 							<div className="bg-code border border-editor-group-border overflow-hidden rounded-xs select-text py-[9px] px-2.5">
@@ -690,7 +739,7 @@ export const ChatRowContent = memo(
 						<div>
 							<div className={HEADER_CLASSNAMES}>
 								<LightbulbIcon className="size-2" />
-								<span className="font-bold">Cline loaded the skill:</span>
+								<span className="font-bold">Loaded skill:</span>
 							</div>
 							<div className="bg-code border border-editor-group-border overflow-hidden rounded-xs py-[9px] px-2.5">
 								<span className="ph-no-capture font-medium">{tool.path}</span>
@@ -902,17 +951,22 @@ export const ChatRowContent = memo(
 							</div>
 						)
 					}
-					case "user_feedback":
+					case "task":
+					case "user_feedback": {
+						const turnMode = getPersistentMessageMode(message.ts, clineMessages, mode ?? "act")
+
 						return (
 							<UserMessage
 								canRestoreWorkspace={canRestoreWorkspaceFromMessage(clineMessages, message.ts)}
 								files={message.files}
 								images={message.images}
 								messageTs={message.ts}
+								mode={turnMode}
 								sendMessageFromChatRow={sendMessageFromChatRow}
 								text={message.text}
 							/>
 						)
+					}
 					case "user_feedback_diff":
 						const tool = JSON.parse(message.text || "{}") as ClineSayTool
 						return (
@@ -1072,40 +1126,57 @@ export const ChatRowContent = memo(
 						}
 
 						return (
-							<div>
-								{title && (
-									<div className={HEADER_CLASSNAMES}>
-										{icon}
-										{title}
+							<div className="grid grid-cols-[16px_1fr] items-start gap-x-2.5 mb-2.5 relative">
+								{/* Left: Timeline Dot & Stem */}
+								<div className="flex flex-col items-center" style={{ height: "calc(100% + 10px)" }}>
+									<div className="h-5 flex items-center justify-center">
+										<div
+											className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 box-border border border-editor-group-border bg-vscode-toolbar-hoverBackground/40 text-description"
+											style={{ borderColor: "var(--vscode-editorGroup-border)" }}>
+											<span className="codicon codicon-question text-[10px]" />
+										</div>
 									</div>
-								)}
-								<WithCopyButton
-									className="pt-1"
-									onMouseUp={handleMouseUp}
-									position="bottom-right"
-									ref={contentRef}
-									textToCopy={question}>
-									<MarkdownRow markdown={question} />
-									{quoteButtonState.visible && (
-										<QuoteButton
-											left={quoteButtonState.left}
-											onClick={() => {
-												handleQuoteClick()
-											}}
-											top={quoteButtonState.top}
-										/>
-									)}
-								</WithCopyButton>
-								<div className="pt-3">
-									<OptionsButtons
-										inputValue={inputValue}
-										isActive={
-											(isLast && lastModifiedMessage?.ask === "followup") ||
-											(!selected && options && options.length > 0)
-										}
-										options={options}
-										selected={selected}
+									<div
+										className="w-[1.5px] grow my-1 rounded-full min-h-[12px]"
+										style={{
+											backgroundColor: "var(--vscode-tree-indentGuidesStroke, rgba(255, 255, 255, 0.12))",
+										}}
 									/>
+								</div>
+
+								{/* Right: Content Node */}
+								<div className="min-w-0 pb-1">
+									<div className="h-5 flex items-center text-[12px] font-medium text-foreground">
+										Question:
+									</div>
+									<WithCopyButton
+										className="pt-1"
+										onMouseUp={handleMouseUp}
+										position="bottom-right"
+										ref={contentRef}
+										textToCopy={question}>
+										<MarkdownRow markdown={question} />
+										{quoteButtonState.visible && (
+											<QuoteButton
+												left={quoteButtonState.left}
+												onClick={() => {
+													handleQuoteClick()
+												}}
+												top={quoteButtonState.top}
+											/>
+										)}
+									</WithCopyButton>
+									<div className="pt-3">
+										<OptionsButtons
+											inputValue={inputValue}
+											isActive={
+												(isLast && lastModifiedMessage?.ask === "followup") ||
+												(!selected && options && options.length > 0)
+											}
+											options={options}
+											selected={selected}
+										/>
+									</div>
 								</div>
 							</div>
 						)
@@ -1114,7 +1185,7 @@ export const ChatRowContent = memo(
 							<div>
 								<div className={HEADER_CLASSNAMES}>
 									<FilePlus2Icon className="size-2" />
-									<span className="text-foreground font-bold">Cline wants to start a new task:</span>
+									<span className="text-foreground font-bold">Start a new task:</span>
 								</div>
 								<NewTaskPreview context={message.text || ""} />
 							</div>
@@ -1124,7 +1195,7 @@ export const ChatRowContent = memo(
 							<div>
 								<div className={HEADER_CLASSNAMES}>
 									<FilePlus2Icon className="size-2" />
-									<span className="text-foreground font-bold">Cline wants to condense your conversation:</span>
+									<span className="text-foreground font-bold">Condense conversation:</span>
 								</div>
 								<NewTaskPreview context={message.text || ""} />
 							</div>
@@ -1134,7 +1205,7 @@ export const ChatRowContent = memo(
 							<div>
 								<div className={HEADER_CLASSNAMES}>
 									<FilePlus2Icon className="size-2" />
-									<span className="text-foreground font-bold">Cline wants to create a Github issue:</span>
+									<span className="text-foreground font-bold">Create Github issue:</span>
 								</div>
 								<ReportBugPreview data={message.text || ""} />
 							</div>

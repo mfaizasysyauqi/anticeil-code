@@ -114,19 +114,42 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 
 	const environmentBorderColor = getEnvironmentColor(environment, "border")
 
+	// Same colors as UserMessage bubble for consistency
+	const isPlanMode = mode === "plan"
+	const bubbleBg = isPlanMode ? "rgba(234, 179, 8, 0.12)" : "rgba(59, 130, 246, 0.12)"
+	const bubbleBorder = environmentBorderColor
+		? environmentBorderColor
+		: isPlanMode
+			? "rgba(234, 179, 8, 0.3)"
+			: "rgba(59, 130, 246, 0.3)"
+
 	return (
-		<div className="py-2 px-4 flex flex-col gap-2">
+		<div className="pt-2 pb-1 px-4 flex flex-col gap-1.5">
+			{/* Top Context & Compact Bar (Antigravity Style) */}
+			<ContextWindow
+				cacheReads={cacheReads}
+				cacheWrites={cacheWrites}
+				contextWindow={selectedModelInfo?.contextWindow}
+				lastApiReqTotalTokens={lastApiReqTotalTokens}
+				onSendMessage={onSendMessage}
+				tokensIn={tokensIn}
+				tokensOut={tokensOut}
+				useAutoCondense={false}
+			/>
+
 			{/* Task Header */}
 			<div
 				className={cn(
-					"relative overflow-hidden cursor-pointer rounded-sm flex flex-col gap-1.5 z-10 pt-2 pb-2 px-2 hover:opacity-100 bg-(--vscode-toolbar-hoverBackground)/65",
+					"relative overflow-hidden cursor-pointer rounded-sm flex flex-col gap-1.5 z-10 pt-2 pb-2 px-2 hover:brightness-105 transition-all duration-150",
 					{
-						"opacity-100 border-1": isTaskExpanded, // No hover effects when expanded, add border
-						"hover:bg-toolbar-hover border-1": !isTaskExpanded, // Hover effects only when collapsed
+						"opacity-100": isTaskExpanded,
 					},
 				)}
 				style={{
-					borderColor: environmentBorderColor,
+					backgroundColor: bubbleBg,
+					border: `1px solid ${bubbleBorder}`,
+					whiteSpace: "pre-line",
+					wordWrap: "break-word",
 				}}>
 				{/* Task Title */}
 				<div
@@ -210,17 +233,6 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 						{((task.images && task.images.length > 0) || (task.files && task.files.length > 0)) && (
 							<Thumbnails files={task.files ?? []} images={task.images ?? []} />
 						)}
-
-						<ContextWindow
-							cacheReads={cacheReads}
-							cacheWrites={cacheWrites}
-							contextWindow={selectedModelInfo?.contextWindow}
-							lastApiReqTotalTokens={lastApiReqTotalTokens}
-							onSendMessage={onSendMessage}
-							tokensIn={tokensIn}
-							tokensOut={tokensOut}
-							useAutoCondense={false} // Disable auto-condense configuration in UI for now
-						/>
 					</div>
 				)}
 			</div>

@@ -1,6 +1,7 @@
 import { COMMAND_OUTPUT_STRING, COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences"
 import { ClineMessage } from "@shared/ExtensionMessage"
 import { StringRequest } from "@shared/proto/cline/common"
+import { TerminalIcon } from "lucide-react"
 import { memo, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -176,82 +177,103 @@ export const CommandOutputRow = memo(
 		const showCancelButton =
 			(isCommandExecuting || isCommandPending) && typeof onCancelCommand === "function" && isBackgroundExec
 
-		const commandHeader = (
-			<div className="flex items-center gap-2.5 mb-3">
-				{icon}
-				{title}
-			</div>
-		)
-
 		return (
-			<>
-				{commandHeader}
-				<div
-					className="bg-code rounded-sm border border-editor-group-border"
-					style={{
-						transition: "all 0.3s ease-in-out",
-					}}>
-					{command && (
-						<div className="bg-code flex items-center justify-between px-2 py-2.5 border-b border-editor-group-border rounded-sm rounded-b-none overflow-hidden">
-							<div className="flex items-center gap-2 flex-1 m-w-0">
-								<div
-									className={cn("bg-description rounded-full w-2 h-2 shrink-0", {
-										"bg-success animate-pulse": isCommandExecuting,
-										"bg-editor-warning-foreground": isCommandPending,
-									})}
-								/>
-								<span
-									className={cn("text-description font-medium text-base shrink-0", {
-										"text-success": isCommandExecuting,
-										"text-editor-warning-foreground": isCommandPending,
-									})}>
-									{getCommandStatusText(isCommandExecuting, isCommandPending, isCommandCompleted)}
-								</span>
+			<div className="grid grid-cols-[16px_1fr] items-start gap-x-2.5 mb-2.5 relative">
+				{/* Left: Timeline Dot & Stem */}
+				<div className="flex flex-col items-center" style={{ height: "calc(100% + 10px)" }}>
+					<div className="h-5 flex items-center justify-center">
+						<div
+							className={cn(
+								"w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 box-border transition-all duration-200",
+								isCommandExecuting
+									? "border border-amber-400/80 bg-amber-500/25 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] animate-pulse"
+									: "border border-amber-500/50 bg-amber-500/15 text-amber-400",
+							)}>
+							<TerminalIcon className="w-2 h-2" />
+						</div>
+					</div>
+					{/* Vertical Line — extends 10px below to bridge mb-2.5 gap to next item */}
+					<div
+						className="w-[1.5px] grow my-1 rounded-full min-h-[12px]"
+						style={{
+							backgroundColor: "var(--vscode-tree-indentGuidesStroke, rgba(255, 255, 255, 0.12))",
+						}}
+					/>
+				</div>
+
+				{/* Right: Content Node */}
+				<div className="min-w-0 pb-1">
+					<div className="h-5 flex items-center text-[12px] font-medium text-foreground mb-1.5">
+						Execute command:
+					</div>
+
+					<div
+						className="bg-code rounded-sm border border-editor-group-border"
+						style={{
+							transition: "all 0.3s ease-in-out",
+						}}>
+						{command && (
+							<div className="bg-code flex items-center justify-between px-2 py-2.5 border-b border-editor-group-border rounded-sm rounded-b-none overflow-hidden">
+								<div className="flex items-center gap-2 flex-1 m-w-0">
+									<div
+										className={cn("bg-description rounded-full w-2 h-2 shrink-0", {
+											"bg-success animate-pulse": isCommandExecuting,
+											"bg-editor-warning-foreground": isCommandPending,
+										})}
+									/>
+									<span
+										className={cn("text-description font-medium text-xs shrink-0", {
+											"text-success": isCommandExecuting,
+											"text-editor-warning-foreground": isCommandPending,
+										})}>
+										{getCommandStatusText(isCommandExecuting, isCommandPending, isCommandCompleted)}
+									</span>
+								</div>
+								<div className="flex items-center gap-2 shrink-0">
+									{showCancelButton && (
+										<Button
+											onClick={(e) => {
+												e.stopPropagation()
+												if (isBackgroundExec) {
+													onCancelCommand?.()
+												} else {
+													// For regular terminal mode, show a message
+													alert(
+														"This command is running in the VSCode terminal. You can manually stop it using Ctrl+C in the terminal, or switch to Background Execution mode in settings for cancellable commands.",
+													)
+												}
+											}}
+											size="sm"
+											variant="secondary">
+											{isBackgroundExec ? "cancel" : "stop"}
+										</Button>
+									)}
+								</div>
 							</div>
-							<div className="flex items-center gap-2 shrink-0">
-								{showCancelButton && (
-									<Button
-										onClick={(e) => {
-											e.stopPropagation()
-											if (isBackgroundExec) {
-												onCancelCommand?.()
-											} else {
-												// For regular terminal mode, show a message
-												alert(
-													"This command is running in the VSCode terminal. You can manually stop it using Ctrl+C in the terminal, or switch to Background Execution mode in settings for cancellable commands.",
-												)
-											}
-										}}
-										size="sm"
-										variant="secondary">
-										{isBackgroundExec ? "cancel" : "stop"}
-									</Button>
-								)}
-							</div>
+						)}
+
+						<div className="bg-code opacity-60 text-sm">
+							<CodeBlock forceWrap={true} source={`${"```"}shell\n${command}\n${"```"}`} />
+						</div>
+
+						{output.length > 0 && (
+							<CommandOutputContent
+								isContainerExpanded={true}
+								isOutputFullyExpanded={isOutputFullyExpanded}
+								onOutputChange={onOutputChange}
+								onToggle={() => setIsOutputFullyExpanded(!isOutputFullyExpanded)}
+								output={output}
+							/>
+						)}
+					</div>
+					{requestsApproval && (
+						<div className="flex items-center gap-2.5 p-2 text-[12px] text-editor-warning-foreground">
+							<i className="codicon codicon-warning" />
+							<span>The model has determined this command requires explicit approval.</span>
 						</div>
 					)}
-
-					<div className="bg-code opacity-60 text-sm">
-						<CodeBlock forceWrap={true} source={`${"```"}shell\n${command}\n${"```"}`} />
-					</div>
-
-					{output.length > 0 && (
-						<CommandOutputContent
-							isContainerExpanded={true}
-							isOutputFullyExpanded={isOutputFullyExpanded}
-							onToggle={() => setIsOutputFullyExpanded(!isOutputFullyExpanded)}
-							onOutputChange={onOutputChange}
-							output={output}
-						/>
-					)}
 				</div>
-				{requestsApproval && (
-					<div className="flex items-center gap-2.5 p-2 text-[12px] text-editor-warning-foreground">
-						<i className="codicon codicon-warning" />
-						<span>The model has determined this command requires explicit approval.</span>
-					</div>
-				)}
-			</>
+			</div>
 		)
 	},
 )

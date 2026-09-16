@@ -45,7 +45,7 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 	chatState,
 	messageHandlers,
 }) => {
-	const { clineMessages, turnState } = useExtensionState()
+	const { clineMessages, turnState, mode } = useExtensionState()
 	const lastRawMessage = useMemo(() => clineMessages.at(-1), [clineMessages])
 
 	const {
@@ -77,6 +77,21 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 			scrollToMessage(scrolledPastUserMessageIndex)
 		}
 	}, [scrollToMessage, scrolledPastUserMessageIndex])
+
+	// Determine the mode that was active when the scrolled-past user message was sent
+	// (same persistent-mode logic as UserMessage, but simplified inline)
+	const stickyMode = useMemo(() => {
+		if (!scrolledPastUserMessage) return mode ?? "act"
+		const idx = clineMessages.findIndex((m) => m.ts === scrolledPastUserMessage.ts)
+		if (idx === -1) return mode ?? "act"
+		for (let i = idx + 1; i < clineMessages.length; i++) {
+			const m = clineMessages[i]
+			if (m.say === "user_feedback") break
+			if (m.say === "plan_completion_result") return "plan"
+			if (m.say === "tool" || m.say === "command" || m.say === "completion_result") return "act"
+		}
+		return mode ?? "act"
+	}, [scrolledPastUserMessage, clineMessages, mode])
 
 	const { expandedRows, inputValue, setActiveQuote } = chatState
 	const lastVisibleRow = useMemo(() => groupedMessages.at(-1), [groupedMessages])
@@ -210,6 +225,7 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 				<StickyUserMessage
 					isVisible={!!scrolledPastUserMessage}
 					lastUserMessage={scrolledPastUserMessage}
+					mode={stickyMode}
 					onScrollToMessage={handleScrollToUserMessage}
 				/>
 			</div>

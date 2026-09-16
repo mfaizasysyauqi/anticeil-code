@@ -22,7 +22,7 @@ export const STEP_CONFIG = {
 		],
 	},
 	[NEW_USER_TYPE.CLINE_PASS]: {
-		title: "Select a ClinePass model",
+		title: "Select an Anticeil Pass model",
 		buttons: [
 			{ text: "Create my Account", action: "signup", variant: "default" },
 			{ text: "Back", action: "back", variant: "secondary" },
@@ -57,7 +57,7 @@ export const STEP_CONFIG = {
 } as const
 
 const CLINE_PASS_USER_TYPE_SELECTION: UserTypeSelection = {
-	title: "ClinePass",
+	title: "Anticeil Pass",
 	description: "Low cost subscription plan for best open weights model.",
 	type: NEW_USER_TYPE.CLINE_PASS,
 	learnMoreUrl: "https://docs.cline.bot/getting-started/clinepass",

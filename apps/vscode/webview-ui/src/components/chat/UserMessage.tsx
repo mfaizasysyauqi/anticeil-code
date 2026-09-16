@@ -11,11 +11,12 @@ interface UserMessageProps {
 	files?: string[]
 	images?: string[]
 	messageTs?: number
+	mode?: string
 	sendMessageFromChatRow?: (text: string, images: string[], files: string[]) => void
 	canRestoreWorkspace?: boolean
 }
 
-const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageTs, canRestoreWorkspace = true }) => {
+const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageTs, mode = "act", canRestoreWorkspace = true }) => {
 	const [isEditing, setIsEditing] = useState(false)
 	const [editedText, setEditedText] = useState(text ?? "")
 	const [editedImages, setEditedImages] = useState(images ?? [])
@@ -23,6 +24,8 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 	const [savingMode, setSavingMode] = useState<"chat" | "workspace" | undefined>()
 	const [errorMessage, setErrorMessage] = useState<string | undefined>()
 	const highlightedText = useMemo(() => highlightText(text), [text])
+
+	const isPlanMode = mode === "plan"
 
 	const startEditing = () => {
 		setEditedText(text ?? "")
@@ -74,9 +77,17 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 		}
 	}
 
+	const bubbleBg = isPlanMode
+		? "rgba(234, 179, 8, 0.12)"
+		: "rgba(59, 130, 246, 0.12)"
+	const bubbleBorder = isPlanMode
+		? "1px solid rgba(234, 179, 8, 0.3)"
+		: "1px solid rgba(59, 130, 246, 0.3)"
+	const bubbleFg = "var(--vscode-foreground)"
+
 	return (
 		<div
-			className={`group relative p-2.5 my-1 text-badge-foreground rounded-xs ${
+			className={`group relative p-2.5 my-1 rounded-sm transition-all duration-150 ${
 				messageTs && !isEditing ? "cursor-pointer pr-8" : ""
 			}`}
 			onClick={messageTs && !isEditing ? startEditing : undefined}
@@ -92,7 +103,9 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 			}
 			role={messageTs && !isEditing ? "button" : undefined}
 			style={{
-				backgroundColor: "var(--vscode-badge-background)",
+				backgroundColor: bubbleBg,
+				border: bubbleBorder,
+				color: bubbleFg,
 				whiteSpace: "pre-line",
 				wordWrap: "break-word",
 			}}
@@ -104,7 +117,7 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 					<TooltipTrigger asChild>
 						<button
 							aria-label="Edit and regenerate from this message"
-							className="absolute right-1.5 top-1.5 opacity-0 group-hover:opacity-80 hover:opacity-100 bg-transparent border-0 text-badge-foreground cursor-pointer p-1"
+							className="absolute right-1.5 top-1.5 opacity-0 group-hover:opacity-70 hover:opacity-100 bg-transparent border-0 cursor-pointer p-1 text-description"
 							onClick={(event) => {
 								event.stopPropagation()
 								startEditing()
@@ -133,9 +146,9 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 						/>
 					)}
 					{errorMessage && <div className="text-xs text-(--vscode-errorForeground)">{errorMessage}</div>}
-					<div className="flex items-center justify-between gap-1.5">
+					<div className="flex items-center justify-between gap-1.5 pt-1">
 						<button
-							className="shrink-0 whitespace-nowrap px-1 py-1 rounded-xs border-0 bg-transparent text-badge-foreground/80 hover:text-badge-foreground cursor-pointer text-xs"
+							className="shrink-0 whitespace-nowrap px-2 py-1 rounded-xs border-0 bg-transparent text-description hover:text-foreground cursor-pointer text-xs transition-colors"
 							disabled={!!savingMode}
 							onClick={cancelEditing}
 							type="button">
@@ -147,7 +160,7 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 								<TooltipTrigger asChild>
 									<span className="inline-flex shrink-0">
 										<button
-											className="whitespace-nowrap px-2 py-1 rounded-xs border border-vscode-button-border bg-transparent text-badge-foreground cursor-pointer disabled:opacity-60 text-xs"
+											className="whitespace-nowrap px-2.5 py-1 rounded-xs border border-editor-group-border bg-vscode-toolbar-hoverBackground/40 hover:bg-vscode-toolbar-hoverBackground text-foreground cursor-pointer disabled:opacity-60 text-xs transition-colors"
 											disabled={!!savingMode}
 											onClick={() => handleSave(false)}
 											type="button">
@@ -162,7 +175,7 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 									<TooltipTrigger asChild>
 										<span className="inline-flex shrink-0">
 											<button
-												className="whitespace-nowrap px-2 py-1 rounded-xs border border-vscode-button-border bg-transparent text-badge-foreground cursor-pointer disabled:opacity-60 text-xs"
+												className="whitespace-nowrap px-2.5 py-1 rounded-xs border border-editor-group-border bg-vscode-toolbar-hoverBackground/40 hover:bg-vscode-toolbar-hoverBackground text-foreground cursor-pointer disabled:opacity-60 text-xs transition-colors"
 												disabled={!!savingMode}
 												onClick={() => handleSave(true)}
 												type="button">

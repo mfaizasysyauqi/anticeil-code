@@ -72,7 +72,7 @@ export abstract class WebviewProvider {
 	 * @returns A template string literal containing the HTML that should be
 	 * rendered within the webview panel
 	 */
-	public getHtmlContent(): string {
+	public getHtmlContent(viewMode: "sidebar" | "editor" = "sidebar"): string {
 		// Get the local path to main script run in the webview,
 		// then convert it to a url we can use in the webview.
 		// The JS file from the React build output
@@ -84,16 +84,6 @@ export abstract class WebviewProvider {
 		const stylesUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.css")
 
 		// Use a nonce to only allow a specific script to be run.
-		/*
-				content security policy of your webview to only allow scripts that have a specific nonce
-				create a content security policy meta tag so that only loading scripts with a nonce is allowed
-				As your extension grows you will likely want to add custom styles, fonts, and/or images to your webview. If you do, you will need to update the content security policy meta tag to explicitly allow for these resources. E.g.
-								<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; font-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
-		- 'unsafe-inline' is required for styles due to vscode-webview-toolkit's dynamic style injection
-		- since we pass base64 images to the webview, we need to specify img-src ${webview.cspSource} data:;
-
-				in meta tag we add nonce attribute: A cryptographic nonce (only used once) to allow scripts. The server must generate a unique nonce value each time it transmits a policy. It is critical to provide a nonce that cannot be guessed as bypassing a resource's policy is otherwise trivial.
-				*/
 		const nonce = getNonce()
 
 		// Tip: Install the es6-string-html VS Code extension to enable code highlighting below
@@ -111,10 +101,11 @@ export abstract class WebviewProvider {
 					style-src ${this.getCspSource()} 'unsafe-inline'; 
 					img-src ${this.getCspSource()} https: data:; 
 					script-src 'nonce-${nonce}' 'unsafe-eval';">
-				<title>Cline</title>
+				<title>Anticeil Code</title>
 			</head>
 			<body>
 				<noscript>You need to enable JavaScript to run this app.</noscript>
+				<script nonce="${nonce}">window.__VIEW_MODE__ = "${viewMode}";</script>
 				<div id="root"></div>
 				<script type="module" nonce="${nonce}" src="${scriptUrl}"></script>
 			</body>
@@ -154,7 +145,7 @@ export abstract class WebviewProvider {
 	 * @returns A template string literal containing the HTML that should be
 	 * rendered within the webview panel
 	 */
-	protected async getHMRHtmlContent(): Promise<string> {
+	protected async getHMRHtmlContent(viewMode: "sidebar" | "editor" = "sidebar"): Promise<string> {
 		const localPort = await this.getDevServerPort()
 		const localServerUrl = `127.0.0.1:${localPort}`
 
@@ -171,7 +162,7 @@ export abstract class WebviewProvider {
 				})
 			}
 
-			return this.getHtmlContent()
+			return this.getHtmlContent(viewMode)
 		}
 
 		const nonce = getNonce()
@@ -207,9 +198,10 @@ export abstract class WebviewProvider {
 					<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
 					<meta http-equiv="Content-Security-Policy" content="${csp.join("; ")}">
 					<link rel="stylesheet" type="text/css" href="${stylesUrl}">
-					<title>Cline</title>
+					<title>Anticeil Code</title>
 				</head>
 				<body>
+					<script nonce="${nonce}">window.__VIEW_MODE__ = "${viewMode}";</script>
 					<div id="root"></div>
 					${reactRefresh}
 					<script type="module" src="${scriptUrl}"></script>

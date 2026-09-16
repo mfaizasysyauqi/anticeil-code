@@ -1,29 +1,28 @@
 import { EmptyRequest, StringArrayRequest } from "@shared/proto/cline/common"
 import { GetTaskHistoryRequest, TaskFavoriteRequest, type TaskItem } from "@shared/proto/cline/task"
+import { HistoryItem } from "@shared/HistoryItem"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import Fuse, { FuseResult } from "fuse.js"
-import { FunnelIcon } from "lucide-react"
+import { ChevronDownIcon, ChevronRightIcon, FunnelIcon, ListChecksIcon, PlusIcon } from "lucide-react"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { GroupedVirtuoso } from "react-virtuoso"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import { PLATFORM_CONFIG } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
+import { cn } from "@/lib/utils"
 import { TaskServiceClient } from "@/services/grpc-client"
 import { formatSize } from "@/utils/format"
 import ViewHeader from "../common/ViewHeader"
 import HistoryViewItem from "./HistoryViewItem"
+import SessionGroupRow from "./SessionGroupRow"
+import { useSessionGroups } from "./useSessionGroups"
 
 type HistoryViewProps = {
-	onDone: () => void
+	onDone?: () => void
 }
 
 type SortOption = "newest" | "oldest" | "mostExpensive" | "mostTokens" | "mostRelevant"
 
-const isToday = (timestamp: number): boolean => {
-	const date = new Date(timestamp)
-	const today = new Date()
-	return today.toDateString() === date.toDateString()
-}
 
 const HISTORY_FILTERS = {
 	newest: "Newest",
@@ -45,8 +44,36 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 	const [lastNonRelevantSort, setLastNonRelevantSort] = useState<SortOption | null>("newest")
 	const [deleteAllDisabled, setDeleteAllDisabled] = useState(false)
 	const [selectedItems, setSelectedItems] = useState<string[]>([])
+	const [selectedGroups, setSelectedGroups] = useState<string[]>([])
+	const [isSelectMode, setIsSelectMode] = useState(false)
 	const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 	const [showCurrentWorkspaceOnly, setShowCurrentWorkspaceOnly] = useState(false)
+
+	// Groups + DnD
+	const {
+		groups,
+		groupedSessionIds,
+		customTitles,
+		createGroup,
+		deleteGroup,
+		renameGroup,
+		renameSession,
+		toggleGroupCollapsed,
+		addToGroup,
+		removeFromGroup,
+	} = useSessionGroups()
+	const [draggingId, setDraggingId] = useState<string | null>(null)
+
+	// Section collapse state
+	const [groupsSectionCollapsed, setGroupsSectionCollapsed] = useState(false)
+	const [sessionsSectionCollapsed, setSessionsSectionCollapsed] = useState(false)
+
+	// Pagination for ungrouped sessions
+	const PAGE_SIZE = 5
+	const [sessionsVisible, setSessionsVisible] = useState(PAGE_SIZE)
+
+	// Pagination for groups list
+	const [groupsVisible, setGroupsVisible] = useState(PAGE_SIZE)
 
 	// Keep track of pending favorite toggle operations
 	const [pendingFavoriteToggles, setPendingFavoriteToggles] = useState<Record<string, boolean>>({})
@@ -229,6 +256,31 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		})
 	}, [])
 
+	const handleGroupSelect = useCallback(
+		(groupId: string, checked: boolean) => {
+			const targetGroup = groups.find((g) => g.id === groupId)
+			const sessionIds = targetGroup?.sessionIds || []
+
+			setSelectedGroups((prev) => {
+				if (checked) {
+					return prev.includes(groupId) ? prev : [...prev, groupId]
+				}
+				return prev.filter((id) => id !== groupId)
+			})
+
+			if (sessionIds.length > 0) {
+				setSelectedItems((prev) => {
+					if (checked) {
+						const toAdd = sessionIds.filter((id) => !prev.includes(id))
+						return [...prev, ...toAdd]
+					}
+					return prev.filter((id) => !sessionIds.includes(id))
+				})
+			}
+		},
+		[groups],
+	)
+
 	const handleDeleteHistoryItem = useCallback(
 		(id: string) => {
 			TaskServiceClient.deleteTasksWithIds(StringArrayRequest.create({ value: [id] }))
@@ -256,6 +308,16 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		[fetchTotalTasksSize, loadTaskHistory],
 	)
 
+	const handleDeleteSelected = useCallback(() => {
+		if (selectedItems.length > 0) {
+			handleDeleteSelectedHistoryItems(selectedItems)
+		}
+		if (selectedGroups.length > 0) {
+			selectedGroups.forEach((groupId) => deleteGroup(groupId))
+			setSelectedGroups([])
+		}
+	}, [selectedItems, selectedGroups, handleDeleteSelectedHistoryItems, deleteGroup])
+
 	const handleDeleteAllHistory = useCallback(() => {
 		setDeleteAllDisabled(true)
 		TaskServiceClient.deleteAllTaskHistory(EmptyRequest.create({}))
@@ -268,8 +330,12 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 			.finally(() => setDeleteAllDisabled(false))
 	}, [fetchTotalTasksSize, loadTaskHistory])
 
+	const tasksWithCustomTitles = useMemo(() => {
+		return tasks.map((t) => (customTitles[t.id] ? { ...t, task: customTitles[t.id] } : t))
+	}, [tasks, customTitles])
+
 	const fuse = useMemo(() => {
-		return new Fuse(tasks, {
+		return new Fuse(tasksWithCustomTitles, {
 			keys: ["task"],
 			threshold: 0.6,
 			shouldSort: true,
@@ -283,7 +349,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 			includeMatches: true,
 			minMatchCharLength: 1,
 		})
-	}, [tasks])
+	}, [tasksWithCustomTitles])
 
 	const taskHistorySearchResults = useMemo(() => {
 		const results = searchQuery
@@ -291,7 +357,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 					.search(searchQuery)
 					?.filter(({ matches }) => matches && matches.length)
 					.map(({ item }) => item)
-			: tasks
+			: [...tasksWithCustomTitles]
 
 		results.sort((a, b) => {
 			switch (sortOption) {
@@ -319,44 +385,6 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		return results
 	}, [tasks, searchQuery, fuse, sortOption])
 
-	// Group tasks into "Today" and "Older" (only for date-based sorts)
-	const { groupedTasks, groupCounts, groupLabels } = useMemo(() => {
-		const isDateSort = sortOption === "newest" || sortOption === "oldest"
-
-		if (!isDateSort) {
-			// No grouping for non-date sorts
-			return {
-				groupedTasks: taskHistorySearchResults,
-				groupCounts: [taskHistorySearchResults.length],
-				groupLabels: [] as string[],
-			}
-		}
-
-		const todayTasks: any[] = []
-		const olderTasks: any[] = []
-
-		taskHistorySearchResults.forEach((task) => {
-			if (isToday(task.ts)) {
-				todayTasks.push(task)
-			} else {
-				olderTasks.push(task)
-			}
-		})
-
-		const groups: { tasks: any[]; label: string }[] = []
-		if (todayTasks.length > 0) {
-			groups.push({ tasks: todayTasks, label: "Today" })
-		}
-		if (olderTasks.length > 0) {
-			groups.push({ tasks: olderTasks, label: "Older" })
-		}
-
-		return {
-			groupedTasks: groups.flatMap((g) => g.tasks),
-			groupCounts: groups.map((g) => g.tasks.length),
-			groupLabels: groups.map((g) => g.label),
-		}
-	}, [taskHistorySearchResults, sortOption])
 
 	// Calculate total size of selected items
 	const selectedItemsSize = useMemo(() => {
@@ -371,17 +399,53 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		(selectAll: boolean) => {
 			if (selectAll) {
 				setSelectedItems(taskHistorySearchResults.map((item) => item.id))
+				setSelectedGroups(groups.map((g) => g.id))
 			} else {
 				setSelectedItems([])
+				setSelectedGroups([])
 			}
 		},
-		[taskHistorySearchResults],
+		[taskHistorySearchResults, groups],
+	)
+
+	const isSidebar = typeof window !== "undefined" && window.__VIEW_MODE__ === "sidebar"
+
+	const handleNewSession = useCallback(() => {
+		TaskServiceClient.clearTask(EmptyRequest.create({})).catch((err: unknown) =>
+			console.error("Failed to clear task:", err),
+		)
+		PLATFORM_CONFIG.postMessage({ type: "openInEditor", taskTitle: "New Session", forceNew: true })
+	}, [])
+
+	// Ungrouped sessions = all filtered tasks minus those already in a group
+	const ungroupedTasks = useMemo(
+		() => taskHistorySearchResults.filter((t) => !groupedSessionIds.includes(t.id)),
+		[taskHistorySearchResults, groupedSessionIds],
+	)
+
+	const visibleUngrouped = ungroupedTasks.slice(0, sessionsVisible)
+	const hasMoreUngrouped = ungroupedTasks.length > sessionsVisible
+
+	const visibleGroups = groups.slice(0, groupsVisible)
+	const hasMoreGroups = groups.length > groupsVisible
+
+	// Drop on ungrouped area = remove from group
+	const handleDropOnSessions = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault()
+			if (draggingId) removeFromGroup(draggingId)
+		},
+		[draggingId, removeFromGroup],
 	)
 
 	return (
-		<div className="fixed overflow-hidden inset-0 flex flex-col w-full">
+		<div className="relative overflow-hidden h-full flex flex-col w-full">
 			{/* HEADER */}
-			<ViewHeader environment={environment} onDone={onDone} title="History" />
+			<ViewHeader
+				environment={environment}
+				onDone={onDone}
+				title={isSidebar ? "Sessions" : "History"}
+			/>
 
 			{/* FILTERS */}
 			<div className="flex flex-col gap-3 px-3">
@@ -479,74 +543,194 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 				</div>
 			</div>
 
-			{/* HISTORY ITEMS */}
-			<div className="flex-grow overflow-y-auto m-0 w-full py-2">
-				<GroupedVirtuoso
-					className="flex-grow overflow-y-scroll"
-					components={{
-						Footer: () =>
-							hasMoreTasks ? (
-								<div className="px-4 py-3 text-center text-xs text-description">
-									{isLoadingHistory ? "Loading..." : ""}
+			{/* ACTIONS BAR */}
+			<div className="flex justify-between items-center px-3 pt-2 pb-0.5">
+				<div className="flex items-center gap-2">
+					<button
+						className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded bg-button-background text-button-foreground hover:brightness-110 transition-all cursor-pointer border border-transparent"
+						onClick={handleNewSession}
+						type="button">
+						<PlusIcon className="stroke-[2.5]" size={13} />
+						<span>New session</span>
+					</button>
+					<button
+						className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors cursor-pointer border border-border-panel/40"
+						onClick={() => createGroup(`Group ${groups.length + 1}`)}
+						type="button">
+						<PlusIcon className="stroke-[2.5]" size={13} />
+						<span>New group</span>
+					</button>
+				</div>
+
+				<Button
+					aria-label={isSelectMode ? "Exit selection mode" : "Select sessions"}
+					className={cn("h-7 w-7 p-0", isSelectMode && "bg-button-background/20 text-button-background")}
+					onClick={() => {
+						setIsSelectMode(!isSelectMode)
+						if (isSelectMode) {
+							setSelectedItems([])
+							setSelectedGroups([])
+						}
+					}}
+					size="icon"
+					variant="ghost">
+					<ListChecksIcon size={16} />
+				</Button>
+			</div>
+
+			{/* MAIN LIST */}
+			<div className="flex-grow overflow-y-auto w-full py-1 px-2">
+
+				{/* ── GROUPS SECTION ── */}
+				<div className="mb-2">
+					{/* Section header */}
+					<button
+						className="flex items-center gap-1.5 w-full px-1 py-1 text-xs font-semibold uppercase tracking-wider text-description hover:text-foreground transition-colors cursor-pointer"
+						onClick={() => setGroupsSectionCollapsed((c) => !c)}
+						type="button">
+						{groupsSectionCollapsed ? (
+							<ChevronRightIcon size={12} />
+						) : (
+							<ChevronDownIcon size={12} />
+						)}
+						<span>Groups</span>
+						<span className="ml-auto font-normal normal-case tracking-normal">{groups.length}</span>
+					</button>
+
+					{!groupsSectionCollapsed && (
+						<>
+							{groups.length === 0 ? (
+								<div className="px-2 py-2 text-xs text-description italic">
+									No groups yet — click "New group" to create one
 								</div>
-							) : null,
-					}}
-					endReached={loadMoreTaskHistory}
-					groupContent={(index) => (
-						<div className="px-4 py-2 text-xs font-bold uppercase tracking-wide sticky top-0 z-10 text-description bg-sidebar-background border-b-border-panel">
-							{groupLabels[index]}
-						</div>
+							) : (
+								<>
+									{visibleGroups.map((group) => (
+										<SessionGroupRow
+											allTasks={tasksWithCustomTitles}
+											draggingId={draggingId}
+											group={group}
+											handleDeleteHistoryItem={handleDeleteHistoryItem}
+											handleGroupSelect={handleGroupSelect}
+											handleHistorySelect={handleHistorySelect}
+											isSelectMode={isSelectMode}
+											key={group.id}
+											onDelete={deleteGroup}
+											onDragEnd={() => setDraggingId(null)}
+											onDragStart={setDraggingId}
+											onDrop={addToGroup}
+											onRename={renameGroup}
+											onRenameSession={renameSession}
+											onToggleCollapsed={toggleGroupCollapsed}
+											pendingFavoriteToggles={pendingFavoriteToggles}
+											selectedGroups={selectedGroups}
+											selectedItems={selectedItems}
+											toggleFavorite={toggleFavorite}
+										/>
+									))}
+									{hasMoreGroups && (
+										<button
+											className="w-full text-xs text-description hover:text-foreground transition-colors py-1.5 text-center cursor-pointer"
+											onClick={() => setGroupsVisible((c) => c + PAGE_SIZE)}
+											type="button">
+											Load {Math.min(PAGE_SIZE, groups.length - groupsVisible)} more groups
+										</button>
+									)}
+								</>
+							)}
+						</>
 					)}
-					groupCounts={groupCounts}
-					itemContent={(index) => {
-						const item = groupedTasks[index]
-						return (
-							<HistoryViewItem
-								handleDeleteHistoryItem={handleDeleteHistoryItem}
-								handleHistorySelect={handleHistorySelect}
-								index={index}
-								item={item}
-								pendingFavoriteToggles={pendingFavoriteToggles}
-								selectedItems={selectedItems}
-								toggleFavorite={toggleFavorite}
-							/>
-						)
-					}}
-				/>
+				</div>
+
+				{/* ── SESSIONS SECTION ── */}
+				<div
+					onDragOver={(e) => { if (draggingId) e.preventDefault() }}
+					onDrop={handleDropOnSessions}>
+					{/* Section header */}
+					<button
+						className="flex items-center gap-1.5 w-full px-1 py-1 text-xs font-semibold uppercase tracking-wider text-description hover:text-foreground transition-colors cursor-pointer"
+						onClick={() => setSessionsSectionCollapsed((c) => !c)}
+						type="button">
+						{sessionsSectionCollapsed ? (
+							<ChevronRightIcon size={12} />
+						) : (
+							<ChevronDownIcon size={12} />
+						)}
+						<span>Sessions</span>
+						<span className="ml-auto font-normal normal-case tracking-normal">{ungroupedTasks.length}</span>
+					</button>
+
+					{!sessionsSectionCollapsed && (
+						<>
+							{isLoadingHistory && ungroupedTasks.length === 0 ? (
+								<div className="px-2 py-2 text-xs text-description">Loading...</div>
+							) : ungroupedTasks.length === 0 ? (
+								<div className="px-2 py-2 text-xs text-description italic">No sessions yet</div>
+							) : (
+								<>
+									{visibleUngrouped.map((item, index) => (
+										<HistoryViewItem
+											handleDeleteHistoryItem={handleDeleteHistoryItem}
+											handleHistorySelect={handleHistorySelect}
+											index={index}
+											isSelectMode={isSelectMode}
+											item={item as unknown as HistoryItem}
+											key={item.id}
+											onDragEnd={() => setDraggingId(null)}
+											onDragStart={setDraggingId}
+											onRename={renameSession}
+											pendingFavoriteToggles={pendingFavoriteToggles}
+											selectedItems={selectedItems}
+											toggleFavorite={toggleFavorite}
+										/>
+									))}
+									{hasMoreUngrouped && (
+										<button
+											className="w-full text-xs text-description hover:text-foreground transition-colors py-1.5 text-center cursor-pointer"
+											onClick={() => setSessionsVisible((c) => c + PAGE_SIZE)}
+											type="button">
+											Load {Math.min(PAGE_SIZE, ungroupedTasks.length - sessionsVisible)} more
+										</button>
+									)}
+								</>
+							)}
+						</>
+					)}
+				</div>
 			</div>
 
 			{/* FOOTER */}
-			<div className="p-2.5 border-t border-t-border-panel">
-				<div className="flex gap-2.5 mb-2.5">
-					<Button className="flex-1" onClick={() => handleBatchHistorySelect(true)} variant="secondary">
-						Select All
-					</Button>
-					<Button className="flex-1" onClick={() => handleBatchHistorySelect(false)} variant="secondary">
-						Select None
-					</Button>
+			{isSelectMode && (
+				<div className="p-2.5 border-t border-t-border-panel">
+					<div className="flex gap-2.5 mb-2.5">
+						<Button className="flex-1" onClick={() => handleBatchHistorySelect(true)} variant="secondary">
+							Select All
+						</Button>
+						<Button className="flex-1" onClick={() => handleBatchHistorySelect(false)} variant="secondary">
+							Select None
+						</Button>
+					</div>
+					{selectedItems.length > 0 || selectedGroups.length > 0 ? (
+						<Button
+							aria-label="Delete selected items"
+							className="w-full"
+							onClick={handleDeleteSelected}
+							variant="danger">
+							Delete {selectedItems.length + selectedGroups.length > 1 ? selectedItems.length + selectedGroups.length : ""} Selected
+							{selectedItemsSize > 0 ? ` (${formatSize(selectedItemsSize)})` : ""}
+						</Button>
+					) : (
+						<Button
+							aria-label="Delete all history"
+							className="w-full"
+							disabled={deleteAllDisabled || (taskHistory.length === 0 && tasks.length === 0)}
+							onClick={handleDeleteAllHistory}
+							variant="danger">
+							Delete All History{totalTasksSize !== null ? ` (${formatSize(totalTasksSize)})` : ""}
+						</Button>
+					)}
 				</div>
-				{selectedItems.length > 0 ? (
-					<Button
-						aria-label="Delete selected items"
-						className="w-full"
-						onClick={() => {
-							handleDeleteSelectedHistoryItems(selectedItems)
-						}}
-						variant="danger">
-						Delete {selectedItems.length > 1 ? selectedItems.length : ""} Selected
-						{selectedItemsSize > 0 ? ` (${formatSize(selectedItemsSize)})` : ""}
-					</Button>
-				) : (
-					<Button
-						aria-label="Delete all history"
-						className="w-full"
-						disabled={deleteAllDisabled || (taskHistory.length === 0 && tasks.length === 0)}
-						onClick={handleDeleteAllHistory}
-						variant="danger">
-						Delete All History{totalTasksSize !== null ? ` (${formatSize(totalTasksSize)})` : ""}
-					</Button>
-				)}
-			</div>
+			)}
 		</div>
 	)
 }

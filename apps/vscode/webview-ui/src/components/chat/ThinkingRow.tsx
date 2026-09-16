@@ -1,6 +1,5 @@
 import { ChevronDownIcon, ChevronRightIcon, SparklesIcon } from "lucide-react"
 import { memo, useCallback, useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface ThinkingRowProps {
@@ -56,20 +55,19 @@ export const ThinkingRow = memo(
 		return (
 			<div className="grid grid-cols-[16px_1fr] items-start gap-x-2.5 mb-2.5 relative">
 				{/* Left: Timeline Dot & Stem */}
-				<div className="flex flex-col items-center h-full">
-					<div
-						className={cn(
-							"w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 box-border transition-all duration-200",
-							isStreaming
-								? "border border-indigo-400/80 bg-indigo-500/20 text-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.35)] animate-pulse"
-								: "border border-editor-group-border bg-vscode-toolbar-hoverBackground/40 text-description",
-						)}
-						style={{
-							borderColor: isStreaming ? undefined : "var(--vscode-editorGroup-border)",
-						}}>
-						<SparklesIcon className="w-2 h-2" />
+				<div className="flex flex-col items-center" style={{ height: "calc(100% + 10px)" }}>
+					<div className="h-5 flex items-center justify-center">
+						<div
+							className={cn(
+								"w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 box-border transition-all duration-200",
+								isStreaming
+									? "border border-purple-400/80 bg-purple-500/25 text-purple-300 shadow-[0_0_8px_rgba(168,85,247,0.4)] animate-pulse"
+									: "border border-purple-500/50 bg-purple-500/15 text-purple-400",
+							)}>
+							<SparklesIcon className="w-2 h-2" />
+						</div>
 					</div>
-					{/* Vertical Line Connecting to Next Item */}
+					{/* Vertical Line — extends 10px below to bridge mb-2.5 gap to next item */}
 					<div
 						className="w-[1.5px] grow my-1 rounded-full min-h-[12px]"
 						style={{
@@ -81,32 +79,33 @@ export const ThinkingRow = memo(
 				{/* Right: Content Node */}
 				<div className="min-w-0 pb-1">
 					{showTitle && (
-						<Button
-							className={cn(
-								"inline-flex items-center gap-1.5 text-left select-none px-0 py-0 my-0 h-auto min-h-0 w-full text-description hover:text-foreground cursor-pointer overflow-visible bg-transparent border-0",
-								{
-									"cursor-pointer": !!onToggle,
-									"cursor-default": !onToggle,
-								},
-							)}
-							onClick={onToggle}
-							size="icon"
-							variant="icon">
-							<span
-								className={cn("text-[12px] font-medium leading-none", {
-									"animate-shimmer bg-linear-90 from-foreground to-description bg-[length:200%_100%] bg-clip-text text-transparent":
-										isStreaming,
-									"select-none": isStreaming,
-								})}>
-								{title}
-							</span>
-							{showChevron &&
-								(isExpanded ? (
-									<ChevronDownIcon className="w-3 h-3 text-description opacity-70 shrink-0" />
-								) : (
-									<ChevronRightIcon className="w-3 h-3 text-description opacity-70 shrink-0" />
-								))}
-						</Button>
+						<div className="h-5 flex items-center">
+							<button
+								type="button"
+								className={cn(
+									"inline-flex items-center justify-start gap-1.5 text-left select-none px-0 py-0 my-0 h-auto min-h-0 text-description hover:text-foreground cursor-pointer overflow-visible bg-transparent border-0 outline-none",
+									{
+										"cursor-pointer": !!onToggle,
+										"cursor-default": !onToggle,
+									},
+								)}
+								onClick={onToggle}>
+								<span
+									className={cn("text-[12px] font-medium leading-none text-left", {
+										"animate-shimmer bg-linear-90 from-foreground to-description bg-[length:200%_100%] bg-clip-text text-transparent":
+											isStreaming,
+										"select-none": isStreaming,
+									})}>
+									{title}
+								</span>
+								{showChevron &&
+									(isExpanded ? (
+										<ChevronDownIcon className="w-3 h-3 text-description opacity-70 shrink-0" />
+									) : (
+										<ChevronRightIcon className="w-3 h-3 text-description opacity-70 shrink-0" />
+									))}
+							</button>
+						</div>
 					)}
 
 					{isExpanded && (

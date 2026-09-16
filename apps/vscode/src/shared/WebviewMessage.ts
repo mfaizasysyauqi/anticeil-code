@@ -1,7 +1,9 @@
 export interface WebviewMessage {
-	type: "grpc_request" | "grpc_request_cancel"
+	type: "grpc_request" | "grpc_request_cancel" | "openInEditor"
 	grpc_request?: GrpcRequest
 	grpc_request_cancel?: GrpcCancel
+	taskTitle?: string
+	forceNew?: boolean
 }
 
 export type GrpcRequest = {

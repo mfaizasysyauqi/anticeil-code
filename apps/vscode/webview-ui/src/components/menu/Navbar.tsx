@@ -15,7 +15,7 @@ export const Navbar = () => {
 			{
 				id: "chat",
 				name: "Chat",
-				tooltip: "New Task",
+				tooltip: "New Session",
 				icon: PlusIcon,
 				navigate: () => {
 					UiServiceClient.trackIntent(

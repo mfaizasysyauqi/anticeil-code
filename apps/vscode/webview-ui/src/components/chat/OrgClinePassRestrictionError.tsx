@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AccountServiceClient } from "@/services/grpc-client";
 
 const ORG_CLINE_PASS_RESTRICTION_MESSAGE =
-	"Organization accounts cannot use ClinePass subscriptions.";
+	"Organization accounts cannot use Anticeil Pass subscriptions.";
 
 const OrgClinePassRestrictionError = () => {
 	const [isSwitching, setIsSwitching] = useState(false);
@@ -32,7 +32,7 @@ const OrgClinePassRestrictionError = () => {
 			data-testid="org-cline-pass-restriction-error"
 		>
 			<div className="text-error mb-2">
-				Organization account cannot use ClinePass
+				Organization account cannot use Anticeil Pass
 			</div>
 			<div className="text-(--vscode-descriptionForeground) text-xs wrap-anywhere">
 				{ORG_CLINE_PASS_RESTRICTION_MESSAGE}

@@ -84,14 +84,14 @@ describe("ClinePassHint", () => {
 
 	it("hides the hint once dismissed and persists the dismissal", () => {
 		render(<ClinePassHint currentMode="plan" selectedProvider="anthropic" />)
-		fireEvent.click(screen.getByLabelText("Dismiss ClinePass hint"))
+		fireEvent.click(screen.getByLabelText("Dismiss Anticeil Pass hint"))
 		expect(screen.queryByTestId("cline-pass-settings-hint")).not.toBeInTheDocument()
 		expect(StateServiceClient.dismissBanner).toHaveBeenCalledWith({ value: "cline-pass-settings-hint-v1" })
 	})
 
 	it("stays hidden after a remount within the same session", () => {
 		const { unmount } = render(<ClinePassHint currentMode="plan" selectedProvider="anthropic" />)
-		fireEvent.click(screen.getByLabelText("Dismiss ClinePass hint"))
+		fireEvent.click(screen.getByLabelText("Dismiss Anticeil Pass hint"))
 		unmount()
 		// Remount before the persisted dismissal has synced back from the host
 		render(<ClinePassHint currentMode="plan" selectedProvider="anthropic" />)

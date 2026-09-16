@@ -1,6 +1,17 @@
+import path from "node:path"
 import { ExecuteCommandInTerminalRequest, ExecuteCommandInTerminalResponse } from "@shared/proto/host/workspace"
 import * as vscode from "vscode"
+import { HostProvider } from "@/hosts/host-provider"
 import { Logger } from "@/shared/services/Logger"
+
+function getTerminalIcon(): vscode.Uri | vscode.ThemeIcon {
+	try {
+		if (HostProvider.isInitialized() && HostProvider.get().extensionFsPath) {
+			return vscode.Uri.file(path.join(HostProvider.get().extensionFsPath, "assets", "icons", "anticeil-logo.svg"))
+		}
+	} catch {}
+	return new vscode.ThemeIcon("terminal")
+}
 
 /**
  * Executes a command in a new terminal
@@ -13,9 +24,10 @@ export async function executeCommandInTerminal(
 	try {
 		// Create terminal with fixed options
 		const terminalOptions: vscode.TerminalOptions = {
-			name: "Cline",
-			iconPath: new vscode.ThemeIcon("cline-icon"),
+			name: "Anticeil",
+			iconPath: getTerminalIcon(),
 			env: {
+				ANTICEIL_ACTIVE: "true",
 				CLINE_ACTIVE: "true",
 			},
 		}

@@ -1,4 +1,4 @@
-﻿import { EmptyRequest } from "@shared/proto/cline/common"
+import { EmptyRequest } from "@shared/proto/cline/common"
 import { ANTICEIL_LOGO_DATA_URI } from "@/assets/anticeilLogoDataUri"
 import { UiServiceClient } from "@/services/grpc-client"
 
@@ -18,8 +18,8 @@ const HomeHeader = ({ shouldShowQuickWins = false }: HomeHeaderProps) => {
 	const headingText = "What can I do for you?"
 
 	return (
-		<div className="flex flex-col items-center mb-5">
-			<div className="my-7 flex items-center justify-center">
+		<div className="flex flex-col items-center justify-center my-auto text-center">
+			<div className="mb-5 flex items-center justify-center">
 				<img
 					src={ANTICEIL_LOGO_DATA_URI}
 					alt="Anticeil Code"
@@ -27,7 +27,7 @@ const HomeHeader = ({ shouldShowQuickWins = false }: HomeHeaderProps) => {
 				/>
 			</div>
 			<div className="text-center flex items-center justify-center px-4">
-				<h1 className="m-0 font-bold">{headingText}</h1>
+				<h1 className="m-0 font-bold text-xl">{headingText}</h1>
 			</div>
 			{shouldShowQuickWins && (
 				<div className="mt-4">

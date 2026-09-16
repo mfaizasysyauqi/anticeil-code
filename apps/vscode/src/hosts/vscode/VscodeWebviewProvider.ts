@@ -1,3 +1,4 @@
+import path from "node:path"
 import { sendShowWebviewEvent } from "@core/controller/ui/subscribeToShowWebview"
 import { WebviewProvider } from "@core/webview"
 import * as vscode from "vscode"
@@ -20,30 +21,90 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	public static readonly SIDEBAR_ID = ExtensionRegistryInfo.views.Sidebar
 
 	private webview?: vscode.WebviewView
+	private webviewPanel?: vscode.WebviewPanel
 	private disposables: vscode.Disposable[] = []
 	private hasResolvedView = false
 
-	override getWebviewUrl(path: string) {
-		if (!this.webview) {
+	override getWebviewUrl(pathStr: string) {
+		const target = this.webviewPanel || this.webview
+		if (!target) {
 			throw new Error("Webview not initialized")
 		}
-		const uri = this.webview.webview.asWebviewUri(vscode.Uri.file(path))
+		const uri = target.webview.asWebviewUri(vscode.Uri.file(pathStr))
 		return uri.toString()
 	}
 
 	override getCspSource() {
-		if (!this.webview) {
+		const target = this.webviewPanel || this.webview
+		if (!target) {
 			throw new Error("Webview not initialized")
 		}
-		return this.webview.webview.cspSource
+		return target.webview.cspSource
 	}
 
 	override isVisible() {
-		return this.webview?.visible || false
+		return this.webviewPanel?.visible || this.webview?.visible || false
 	}
 
 	public getWebview(): vscode.WebviewView | undefined {
 		return this.webview
+	}
+
+	private getActiveTaskTitle(): string | undefined {
+		// biome-ignore lint/suspicious/noExplicitAny: task object may carry task string or first message text
+		const task = (this.controller as any).task
+		return task?.task || task?.messageStateHandler?.messages?.[0]?.text
+	}
+
+	public updateWebviewPanelTitle(taskTitle?: string) {
+		if (this.webviewPanel) {
+			const title = taskTitle || this.getActiveTaskTitle() || "New Session"
+			this.webviewPanel.title = title.length > 25 ? title.slice(0, 22) + "..." : title
+		}
+	}
+
+	public async createOrShowWebviewPanel(
+		viewColumn: vscode.ViewColumn = vscode.ViewColumn.Beside,
+		taskTitle?: string,
+	): Promise<vscode.WebviewPanel> {
+		if (this.webviewPanel) {
+			this.updateWebviewPanelTitle(taskTitle)
+			this.webviewPanel.reveal(viewColumn)
+			return this.webviewPanel
+		}
+
+		const initialTitle = taskTitle || this.getActiveTaskTitle() || "New Session"
+		const panel = vscode.window.createWebviewPanel(
+			"anticeil-code.TabProvider",
+			initialTitle.length > 25 ? initialTitle.slice(0, 22) + "..." : initialTitle,
+			viewColumn,
+			{
+				enableScripts: true,
+				retainContextWhenHidden: true,
+				localResourceRoots: [vscode.Uri.file(HostProvider.get().extensionFsPath)],
+			},
+		)
+
+		panel.iconPath = vscode.Uri.file(path.join(HostProvider.get().extensionFsPath, "assets", "icons", "icon.png"))
+		this.webviewPanel = panel
+
+		panel.webview.html =
+			this.context.extensionMode === vscode.ExtensionMode.Development
+				? await this.getHMRHtmlContent("editor")
+				: this.getHtmlContent("editor")
+
+		this.setWebviewMessageListener(panel.webview)
+
+		panel.onDidDispose(
+			() => {
+				this.webviewPanel = undefined
+			},
+			null,
+			this.disposables,
+		)
+
+		await this.controller.postStateToWebview()
+		return panel
 	}
 
 	/**
@@ -67,8 +128,8 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 
 		webviewView.webview.html =
 			this.context.extensionMode === vscode.ExtensionMode.Development
-				? await this.getHMRHtmlContent()
-				: this.getHtmlContent()
+				? await this.getHMRHtmlContent("sidebar")
+				: this.getHtmlContent("sidebar")
 
 		// Sets up an event listener to listen for messages passed from the webview view context
 		// and executes code based on the message that is received
@@ -184,6 +245,15 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 				}
 				break
 			}
+			case "openInEditor": {
+				if (message.forceNew) {
+					// Dispose existing panel so a brand-new tab is always opened
+					this.webviewPanel?.dispose()
+					this.webviewPanel = undefined
+				}
+				await this.createOrShowWebviewPanel(vscode.ViewColumn.Beside, message.taskTitle)
+				break
+			}
 			default: {
 				Logger.error("Received unhandled WebviewMessage type:", JSON.stringify(message))
 			}
@@ -197,7 +267,10 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	 * @returns A thenable that resolves to a boolean indicating success, or undefined if the webview is not available
 	 */
 	private async postMessageToWebview(message: ExtensionMessage): Promise<boolean | undefined> {
-		return this.webview?.webview.postMessage(message)
+		this.updateWebviewPanelTitle()
+		const res1 = this.webview?.webview.postMessage(message)
+		const res2 = this.webviewPanel?.webview.postMessage(message)
+		return (await res1) || (await res2)
 	}
 
 	/**

@@ -493,8 +493,8 @@ export const GENERATED_PROVIDER_SPECS: readonly BuiltinSpec[] = [
 	},
 	{
 		id: "cline-pass",
-		name: "ClinePass",
-		description: "ClinePass model provider from models.dev",
+		name: "Anticeil Pass",
+		description: "Anticeil Pass model provider from models.dev",
 		family: "openai-compatible",
 		capabilities: ["tools", "reasoning", "prompt-cache"],
 		modelsProviderId: "cline-pass",

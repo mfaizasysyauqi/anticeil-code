@@ -1,5 +1,6 @@
 import { ClineMessage, ClineSayTool } from "@shared/ExtensionMessage"
 import { StringRequest } from "@shared/proto/cline/common"
+import { FileTextIcon } from "lucide-react"
 import { memo, useCallback, useMemo, useState } from "react"
 import { TypewriterText } from "@/components/chat/TypewriterText"
 import { cleanPathPrefix } from "@/components/common/CodeAccordian"
@@ -171,69 +172,90 @@ export const ToolGroupRenderer = memo(({ messages, allMessages, isLastGroup }: T
 	}
 
 	return (
-		<div className={cn("px-4 py-2 ml-1 text-description")}>
-			{/* Header */}
-			<div className="text-[13px] text-description font-semibold mb-1">{summary}:</div>
+		<div className="grid grid-cols-[16px_1fr] items-start gap-x-2.5 mb-2.5 relative text-description">
+			{/* Left: Timeline Dot & Stem */}
+			<div className="flex flex-col items-center" style={{ height: "calc(100% + 10px)" }}>
+				<div className="h-5 flex items-center justify-center">
+					<div className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 box-border border border-blue-500/50 bg-blue-500/15 text-blue-400">
+						<FileTextIcon className="w-2 h-2" />
+					</div>
+				</div>
+				{/* Vertical Line — extends 10px below to bridge mb-2.5 gap to next item */}
+				<div
+					className="w-[1.5px] grow my-1 rounded-full min-h-[12px]"
+					style={{
+						backgroundColor: "var(--vscode-tree-indentGuidesStroke, rgba(255, 255, 255, 0.12))",
+					}}
+				/>
+			</div>
 
-			{/* Content - unified list of completed + active tools */}
-			<div className="min-w-0">
-				{allTools.map(({ tool, parsedTool, isActive, activityText }) => {
-					const info = getToolDisplayInfo(parsedTool)
-					if (!info) {
-						return null
-					}
+			{/* Right: Content Node */}
+			<div className="min-w-0 pb-1">
+				{/* Header */}
+				<div className="h-5 flex items-center text-[12px] font-medium text-description">
+					{summary}:
+				</div>
 
-					const isExpandable = EXPANDABLE_TOOLS.has(parsedTool.tool)
-					const isItemExpanded = expandedItems[tool.ts] ?? false
-					const content = parsedTool.content || null
+				{/* Content - unified list of completed + active tools */}
+				<div className="min-w-0 mt-0.5 flex flex-col gap-0.5">
+					{allTools.map(({ tool, parsedTool, isActive, activityText }) => {
+						const info = getToolDisplayInfo(parsedTool)
+						if (!info) {
+							return null
+						}
 
-					// Active items render with "Reading..." TypewriterText (match completed item structure exactly)
-					if (isActive && activityText) {
+						const isExpandable = EXPANDABLE_TOOLS.has(parsedTool.tool)
+						const isItemExpanded = expandedItems[tool.ts] ?? false
+						const content = parsedTool.content || null
+
+						// Active items render with "Reading..." TypewriterText (match completed item structure exactly)
+						if (isActive && activityText) {
+							return (
+								<div className="min-w-0" key={tool.ts}>
+									{/* ACTIVE "READING..." ITEM STYLING */}
+									<Button
+										className="flex items-center gap-1.5 text-[12px] text-description py-[1px] min-w-0 max-w-full px-0 leading-tight -my-0.5"
+										disabled
+										size="icon"
+										variant="text">
+										<info.icon className="opacity-70 shrink-0 size-[12px]" />
+										<span className="flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-left text-[12px]">
+											<TypewriterText speed={15} text={activityText} />
+										</span>
+									</Button>
+								</div>
+							)
+						}
+
+						// Completed items render normally (clickable)
 						return (
 							<div className="min-w-0" key={tool.ts}>
-								{/* ACTIVE "READING..." ITEM STYLING - Modify vertical spacing here via py-0 and -my-0.5 */}
 								<Button
-									className="flex items-center gap-[3px] text-[13px] text-description py-[1px] min-w-0 max-w-full px-0 leading-tight -my-0.5"
-									disabled
+									className="flex items-center gap-1.5 cursor-pointer text-[12px] text-description hover:text-foreground py-[1px] min-w-0 max-w-full px-0 leading-tight -my-0.5 transition-colors"
+									onClick={() => (isExpandable ? handleItemToggle(tool.ts) : handleOpenFile(info.path))}
 									size="icon"
 									variant="text">
 									<info.icon className="opacity-70 shrink-0 size-[12px]" />
-									<span className="flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-left text-[13px]">
-										<TypewriterText speed={15} text={activityText} />
-									</span>{" "}
+									<span
+										className={cn(
+											"flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-left [direction:rtl] text-[12px]",
+											{
+												"[direction:ltr]": !!info.displayText,
+											},
+										)}>
+										{(info.displayText || cleanPathPrefix(info.path)) + "\u200E"}
+									</span>
 								</Button>
+								{/* Expanded content for folders/search/definitions - file lists only */}
+								{isExpandable && isItemExpanded && content && (
+									<pre className="m-1 ml-4 text-xs opacity-80 whitespace-pre-wrap break-words p-2 max-h-40 overflow-auto rounded-xs">
+										{content}
+									</pre>
+								)}
 							</div>
 						)
-					}
-
-					// Completed items render normally (clickable)
-					return (
-						<div className="min-w-0" key={tool.ts}>
-							<Button
-								className="flex items-center gap-[3px] cursor-pointer text-[13px] text-description py-[1px] hover:text-link min-w-0 max-w-full px-0 leading-tight -my-0.5"
-								onClick={() => (isExpandable ? handleItemToggle(tool.ts) : handleOpenFile(info.path))}
-								size="icon"
-								variant="text">
-								<info.icon className="opacity-70 shrink-0 size-[12px]" />
-								<span
-									className={cn(
-										"flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis text-left [direction:rtl] text-[13px]",
-										{
-											"[direction:ltr]": !!info.displayText,
-										},
-									)}>
-									{(info.displayText || cleanPathPrefix(info.path)) + "\u200E"}
-								</span>
-							</Button>
-							{/* Expanded content for folders/search/definitions - file lists only */}
-							{isExpandable && isItemExpanded && content && (
-								<pre className="m-1 ml-4 text-xs opacity-80 whitespace-pre-wrap break-words p-2 max-h-40 overflow-auto rounded-xs">
-									{content}
-								</pre>
-							)}
-						</div>
-					)
-				})}
+					})}
+				</div>
 			</div>
 		</div>
 	)
@@ -379,7 +401,7 @@ export function getToolGroupSummaryFromParsedTools(tools: ClineSayTool[]): strin
 	}
 
 	const parts: string[] = []
-	const action = counts.read > 0 || counts.list > 0 ? " read " : " "
+	const action = counts.read > 0 || counts.list > 0 ? "Read " : "Explored "
 
 	if (counts.read > 0) {
 		parts.push(`${counts.read} file${counts.read > 1 ? "s" : ""}`)
@@ -394,5 +416,5 @@ export function getToolGroupSummaryFromParsedTools(tools: ClineSayTool[]): strin
 		parts.push(`performed ${counts.search} search${counts.search > 1 ? "es" : ""}`)
 	}
 
-	return parts.length === 0 ? "Context" : "Cline" + action + parts.join(", ")
+	return parts.length === 0 ? "Context" : action + parts.join(", ")
 }
